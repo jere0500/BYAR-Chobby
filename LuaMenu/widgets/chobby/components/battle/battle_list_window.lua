@@ -1343,6 +1343,27 @@ function BattleListWindow:OpenHostWindow()
 		parent = hostBattleWindow,
 	}
 
+	local friendCheckbox = Checkbox:New {
+		x = 15,
+		width = 300,
+		y = 225,
+		height = 35,
+		boxalign = "left",
+		boxsize = 20,
+		caption = "Allow friends to join directly",
+		checked =  false,
+		objectOverrideFont = WG.Chobby.Configuration:GetFont(2),
+		OnChange = {
+			function (obj, newState)
+				allowFriendsToJoin =  newState
+			
+			end
+		},
+		parent = hostBattleWindow,
+		tooltip = "If you have a private battle, allow friends to join without entering a password.",
+	}
+	friendCheckbox:Hide()
+
 	local userWantsPrivateBattle = false
 	--if lobby:GetMyIsAdmin() then -- TODO: remove this when feature goes live
 		local privateCheckbox = Checkbox:New {
@@ -1358,6 +1379,11 @@ function BattleListWindow:OpenHostWindow()
 			OnChange = {
 				function (obj, newState)
 					userWantsPrivateBattle =  newState
+					if newState then
+						friendCheckbox:Show()
+					else
+						friendCheckbox:Hide()
+					end
 				end
 			},
 			parent = hostBattleWindow,
