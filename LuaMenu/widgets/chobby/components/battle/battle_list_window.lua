@@ -1389,12 +1389,13 @@ function BattleListWindow:OpenHostWindow()
 			parent = hostBattleWindow,
 			tooltip = "If you want a passworded battleroom, please be patient while we spin up a room for you. You will be PM-ed a 4 character password you can share with your friends.",
 		}
+
 	--end
 
 	local errorLabel = Label:New {
 		x = 15,
 		width = 200,
-		y = 235,
+		y = 245,
 		align = "left",
 		height = 35,
 		caption = "",-- i18n("game_type") .. ":",
@@ -1464,6 +1465,13 @@ function BattleListWindow:OpenHostWindow()
 						local myplayername = lobby:GetMyUserName() or ''
 						lobby:SayBattle("Password is: " .. mypassword)
 						lobby:SayBattle("!boss " .. myplayername)
+						if allowFriendsToJoin then
+							local function setGatekeeper()
+								lobby:SayBattle("$gatekeeper friends")
+							end
+							-- Maybe reconfigure it to react to a received message
+							WG.Delay(setGatekeeper, 3)
+						end
 					end
 
 					WG.Delay(bossSelf, 1)
@@ -1701,7 +1709,9 @@ function BattleListWindow:JoinBattle(battle, _, _, joinAsPlayer)
 
 		lobby:AddListener("OnJoinBattleFailed", onJoinBattleFailed)
 		lobby:AddListener("OnJoinBattle", onJoinBattle)
-
+			
+		-- try to join first without a password, succeeds when lobby is open to friends
+		tryJoin()
 		local popupHolder = PriorityPopup(passwordWindow, CancelFunc, tryJoin)
 		screen0:FocusControl(ebPassword)
 	end
