@@ -1424,6 +1424,7 @@ function BattleListWindow:OpenHostWindow()
 					Spring.Echo("Got the password:", mypassword)
 				end
 			end
+			
 
 			lobby:AddListener("OnSaidPrivate", listenForPrivateBattle)
 			lobby:SayPrivate(targetCluster, "!privatehost")
@@ -1461,17 +1462,22 @@ function BattleListWindow:OpenHostWindow()
 					lobby:JoinBattle(myprivatebattleID, mypassword, _, true) -- forcePlayer = true
 					lobby:RemoveListener("OnSaidPrivate", listenForPrivateBattle)
 
+					local function listenForBoss(listener, userName, message, msgDate)
+						if string.find(userName, targetCluster, nil, true) and string.find(message, "* Boss mode enabled for", nil, true) then
+							Spring.Echo(userName)
+							lobby:SayBattle("$gatekeeper friends")
+							lobby:RemoveListener("OnSaidBattleEx", listenForBoss)
+						end
+					end
+
 					local function bossSelf()
 						local myplayername = lobby:GetMyUserName() or ''
+						if allowFriendsToJoin then
+							-- sets the gatekeeper after being set to boss
+							lobby:AddListener("OnSaidBattleEx", listenForBoss)
+						end
 						lobby:SayBattle("Password is: " .. mypassword)
 						lobby:SayBattle("!boss " .. myplayername)
-						if allowFriendsToJoin then
-							local function setGatekeeper()
-								lobby:SayBattle("$gatekeeper friends")
-							end
-							-- Maybe reconfigure it to react to a received message
-							WG.Delay(setGatekeeper, 3)
-						end
 					end
 
 					WG.Delay(bossSelf, 1)
