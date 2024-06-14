@@ -1,3 +1,5 @@
+-- require "json.lua"
+
 function widget:GetInfo()
 	return {
 		name    = 'Modoptions Panel',
@@ -561,9 +563,23 @@ local function InitializeModoptionsDisplay()
 		local text = ""
 		local empty = true
 		panelModoptions = modopts or panelModoptions or {}
+		-- if not json then
+		-- 	VFS.Include(LIB_LOBBY_DIRNAME .. "json.lua")
+		-- end
+		-- this only adds all options, which are different from the defaults
+		local jsonobj =json.encode({["defaultPreset"] =panelModoptions})
+		Spring.Echo(jsonobj)
+		Spring.Echo(type(panelModoptions))
+
+		local modfile = io.open("modfile.json", 'w')
+		modfile:write(jsonobj)
+		modfile:close()
+
+
 		if not modoptions then return end
 		for key, value in pairs(panelModoptions) do
 			if modoptionDefaults[key] == nil or modoptionDefaults[key] ~= value or key == "ranked_game" then
+				--? this functions seems to match all functions which are different from default, try to print them out
 				local option = getModOptionByKey(key)
 				local name = option.name and option.name or key
 				text = text .. "\255\255\255\255"
@@ -752,5 +768,9 @@ function widget:Initialize()
 	CHOBBY_DIR = LUA_DIRNAME .. "widgets/chobby/"
 	VFS.Include(LUA_DIRNAME .. "widgets/chobby/headers/exports.lua", nil, VFS.RAW_FIRST)
 
+	Spring.Echo("-----------------------------------------------------")
+	Spring.Echo(LUA_DIRNAME)
+	VFS.Include("libs/json.lua")
+	Spring.Echo("-----------------------------------------------------")
 	WG.ModoptionsPanel = ModoptionsPanel
 end
