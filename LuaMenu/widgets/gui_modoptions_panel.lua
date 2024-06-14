@@ -346,6 +346,50 @@ local function PopulateTab(options)
 	return {contentsPanel}
 end
 
+local function PopulatePresetTab()
+	local contentsPanel = ScrollPanel:New {
+		x = 6,
+		right = 5,
+		y = 10,
+		bottom = 8,
+		horizontalScrollbar = false,
+	}
+
+	local buttonAccept = Button:New {
+		x = 10,
+		width = 135,
+		y = 10,
+		height = 70,
+		caption = "save Preset",
+		objectOverrideFont = WG.Chobby.Configuration:GetFont(3),
+		classname = "action_button",
+		OnClick = {
+			function()
+				Spring.Echo("Hi from presets panel")
+			end
+		},
+	}
+
+	local buttonReset = Button:New {
+		x = 150,
+		width = 135,
+		y = 10,
+		height = 70,
+		caption = "load preset",
+		objectOverrideFont = WG.Chobby.Configuration:GetFont(3),
+		classname = "action_button",
+		OnClick = {
+			function()
+				Spring.Echo("Hi, ready to resist from presets panel")
+			end
+		},
+	}
+
+	contentsPanel:AddChild(buttonAccept)
+	contentsPanel:AddChild(buttonReset)
+	return {contentsPanel}
+end
+
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
 -- Modoptions Window Handler
@@ -381,12 +425,18 @@ local function CreateModoptionWindow()
 		if origCaption ~= caption then
 			tooltip = origCaption
 		end
+		local children
+		if data.title ~= 'presets' then
+			children = PopulateTab(data.options)
+		else
+			children = PopulatePresetTab()
+		end
 		tabs[#tabs + 1] = {
 			name = key,
 			caption = caption,
 			tooltip = tooltip,
 			objectOverrideFont = WG.Chobby.Configuration:GetFont(fontSize),
-			children = PopulateTab(data.options),
+			children = children,
 			weight = data.weight or weight
 		}
 	end
@@ -435,6 +485,18 @@ local function CreateModoptionWindow()
 
 	local function AcceptFunc()
 		screen0:FocusControl(buttonAccept) -- Defocus the text entry
+		-- if not json then
+		-- 	VFS.Include(LIB_LOBBY_DIRNAME .. "json.lua")
+		-- end
+		-- this only adds all options, which are different from the defaults
+		local jsonobj =json.encode({["defaultPreset"] =localModoptions})
+		Spring.Echo(jsonobj)
+		Spring.Echo(type(localModoptions))
+
+		local modfile = io.open("modfile.json", 'w')
+		modfile:write(jsonobj)
+		modfile:close()
+
 		battleLobby:SetModOptions(localModoptions)
 		modoptionsSelectionWindow:Dispose()
 	end
@@ -563,17 +625,7 @@ local function InitializeModoptionsDisplay()
 		local text = ""
 		local empty = true
 		panelModoptions = modopts or panelModoptions or {}
-		-- if not json then
-		-- 	VFS.Include(LIB_LOBBY_DIRNAME .. "json.lua")
-		-- end
-		-- this only adds all options, which are different from the defaults
-		local jsonobj =json.encode({["defaultPreset"] =panelModoptions})
-		Spring.Echo(jsonobj)
-		Spring.Echo(type(panelModoptions))
-
-		local modfile = io.open("modfile.json", 'w')
-		modfile:write(jsonobj)
-		modfile:close()
+		-- old path
 
 
 		if not modoptions then return end
@@ -671,6 +723,12 @@ function ModoptionsPanel.RefreshModoptions()
 			end
 		end
 	end
+
+	modoptionStructure.sections['presets'] = {
+		title = 'presets',
+		options = {}
+	}
+
 
 	if not devmode then
 		modoptionStructure.sections["dev"] = nil
