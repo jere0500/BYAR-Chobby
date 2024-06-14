@@ -23,7 +23,7 @@ local battleLobby
 local localModoptions = {}
 local modoptionControlNames = {}
 local modoptions
-
+local window
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
 -- Utility Function
@@ -355,17 +355,61 @@ local function PopulatePresetTab()
 		horizontalScrollbar = false,
 	}
 
+
+	local presetEditBox = EditBox:New {
+		x = 0,
+		y = 0,
+		width = 300,
+		height = 30,
+		text   = "defaultPreset",
+		useIME = false,
+		hint = "whatever hint",
+		objectOverrideFont = WG.Chobby.Configuration:GetFont(2),
+		objectOverrideHintFont = WG.Chobby.Configuration:GetFont(11),
+		tooltip = "whatever tooltip",
+		OnFocusUpdate = {
+			function (obj)
+				Spring.Echo("updated")
+			end
+		}
+	}
+
 	local buttonAccept = Button:New {
 		x = 10,
 		width = 135,
-		y = 10,
+		y = 40,
 		height = 70,
-		caption = "save Preset",
+		caption = "Save Preset",
 		objectOverrideFont = WG.Chobby.Configuration:GetFont(3),
 		classname = "action_button",
 		OnClick = {
 			function()
-				Spring.Echo("Hi from presets panel")
+
+				-- if not json then
+				-- 	VFS.Include(LIB_LOBBY_DIRNAME .. "json.lua")
+				-- end
+				-- this only adds all options, which are different from the defaults
+				local preset = "defaultPreset"
+				if (presetEditBox.text ~= nil) then
+					preset = presetEditBox.text
+				end
+
+				local modfile = io.open("modfile.json", 'r')
+			 	local jsondata = json.decode(modfile:read())
+				modfile:close()
+
+				jsondata[preset]=localModoptions
+
+
+				modfile = io.open("modfile.json", 'w')
+				local jsonobj =json.encode(jsondata)
+				Spring.Echo(jsonobj)
+				Spring.Echo(type(localModoptions))
+
+				modfile:write(jsonobj)
+				modfile:close()
+				Spring.Echo("Saving done")
+
 			end
 		},
 	}
@@ -373,18 +417,37 @@ local function PopulatePresetTab()
 	local buttonReset = Button:New {
 		x = 150,
 		width = 135,
-		y = 10,
+		y = 40,
 		height = 70,
-		caption = "load preset",
+		caption = "Load Preset",
 		objectOverrideFont = WG.Chobby.Configuration:GetFont(3),
 		classname = "action_button",
 		OnClick = {
 			function()
+				-- needs to load the saved options 
 				Spring.Echo("Hi, ready to resist from presets panel")
+
+				local modfile = io.open("modfile.json", 'r')
+			 	local jsondata = modfile:read()
+				modfile:close()
+				local springobj = json.decode(jsondata)
+				Spring.Echo(jsondata)
+				Spring.Echo(springobj)
+
+				local preset = "defaultPreset"
+				if (presetEditBox.text ~= nil) then
+					preset = presetEditBox.text
+				end
+
+				localModoptions = springobj[preset]
+
+				battleLobby:SetModOptions(localModoptions)
+				window:Dispose()
 			end
 		},
 	}
 
+	contentsPanel:AddChild(presetEditBox)
 	contentsPanel:AddChild(buttonAccept)
 	contentsPanel:AddChild(buttonReset)
 	return {contentsPanel}
@@ -426,7 +489,7 @@ local function CreateModoptionWindow()
 			tooltip = origCaption
 		end
 		local children
-		if data.title ~= 'presets' then
+		if data.title ~= 'Presets' then
 			children = PopulateTab(data.options)
 		else
 			children = PopulatePresetTab()
@@ -480,23 +543,12 @@ local function CreateModoptionWindow()
 	local function CancelFunc()
 		modoptionsSelectionWindow:Dispose()
 	end
+	window = modoptionsSelectionWindow;
 
 	local buttonAccept, buttonReset
 
 	local function AcceptFunc()
 		screen0:FocusControl(buttonAccept) -- Defocus the text entry
-		-- if not json then
-		-- 	VFS.Include(LIB_LOBBY_DIRNAME .. "json.lua")
-		-- end
-		-- this only adds all options, which are different from the defaults
-		local jsonobj =json.encode({["defaultPreset"] =localModoptions})
-		Spring.Echo(jsonobj)
-		Spring.Echo(type(localModoptions))
-
-		local modfile = io.open("modfile.json", 'w')
-		modfile:write(jsonobj)
-		modfile:close()
-
 		battleLobby:SetModOptions(localModoptions)
 		modoptionsSelectionWindow:Dispose()
 	end
@@ -725,7 +777,7 @@ function ModoptionsPanel.RefreshModoptions()
 	end
 
 	modoptionStructure.sections['presets'] = {
-		title = 'presets',
+		title = 'Presets',
 		options = {}
 	}
 
