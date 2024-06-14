@@ -347,6 +347,35 @@ local function PopulateTab(options)
 end
 
 local function PopulatePresetTab()
+	-- now we need to store the object in this class
+	local jsondata;
+	local selectedPreset;
+
+	local function refreshJSONData()
+		local modfile = io.open("modfile.json", 'r')
+		if modfile == nil then
+			-- maybe some logging
+			return
+		end
+		jsondata = json.decode(modfile:read())
+		modfile:close()
+	end
+
+	-- initail population
+	refreshJSONData()
+
+	-- needs to get repopulated, when creating a new preset
+	local presetNames = {}
+	local function regeneratePresetName()
+		presetNames = {}
+		for key,_ in pairs(jsondata) do
+		    table.insert(presetNames, key)
+		end
+		selectedPreset = presetNames[0]
+	end
+	regeneratePresetName()
+
+
 	local contentsPanel = ScrollPanel:New {
 		x = 6,
 		right = 5,
@@ -357,8 +386,8 @@ local function PopulatePresetTab()
 
 
 	local presetEditBox = EditBox:New {
-		x = 0,
-		y = 0,
+		x = 10,
+		y = 200,
 		width = 300,
 		height = 30,
 		text   = "defaultPreset",
@@ -377,7 +406,7 @@ local function PopulatePresetTab()
 	local buttonAccept = Button:New {
 		x = 10,
 		width = 135,
-		y = 40,
+		y = 240,
 		height = 70,
 		caption = "Save Preset",
 		objectOverrideFont = WG.Chobby.Configuration:GetFont(3),
@@ -394,9 +423,6 @@ local function PopulatePresetTab()
 					preset = presetEditBox.text
 				end
 
-				local modfile = io.open("modfile.json", 'r')
-			 	local jsondata = json.decode(modfile:read())
-				modfile:close()
 
 				jsondata[preset]=localModoptions
 
@@ -410,12 +436,15 @@ local function PopulatePresetTab()
 				modfile:close()
 				Spring.Echo("Saving done")
 
+				-- refreshJSONData(), refresh is only needed, when an external file was modified
+				regeneratePresetName()
+
 			end
 		},
 	}
 
 	local buttonReset = Button:New {
-		x = 150,
+		x = 10,
 		width = 135,
 		y = 40,
 		height = 70,
@@ -427,19 +456,12 @@ local function PopulatePresetTab()
 				-- needs to load the saved options 
 				Spring.Echo("Hi, ready to resist from presets panel")
 
-				local modfile = io.open("modfile.json", 'r')
-			 	local jsondata = modfile:read()
-				modfile:close()
-				local springobj = json.decode(jsondata)
-				Spring.Echo(jsondata)
-				Spring.Echo(springobj)
+				-- local preset = "defaultPreset"
+				-- if (presetEditBox.text ~= nil) then
+				-- 	preset = presetEditBox.text
+				-- end
 
-				local preset = "defaultPreset"
-				if (presetEditBox.text ~= nil) then
-					preset = presetEditBox.text
-				end
-
-				localModoptions = springobj[preset]
+				localModoptions = jsondata[selectedPreset]
 
 				battleLobby:SetModOptions(localModoptions)
 				window:Dispose()
@@ -447,9 +469,34 @@ local function PopulatePresetTab()
 		},
 	}
 
+
+
+	local presetList = ComboBox:New {
+		x = 10,
+		y = 0,
+		width = 300,
+		height = 30,
+		valign = "center",
+		align = "left",
+		items = presetNames,
+		objectOverrideFont = WG.Chobby.Configuration:GetFont(2),
+		selectByName = true,
+		selected = presetNames[0],
+		OnSelectName = {
+			function (obj, selectedName)
+				selectedPreset = selectedName
+			end
+		},
+		itemKeyToName = presetNames, -- Not a chili key
+		-- tooltip = data.desc,
+	}
+
+
 	contentsPanel:AddChild(presetEditBox)
 	contentsPanel:AddChild(buttonAccept)
 	contentsPanel:AddChild(buttonReset)
+	contentsPanel:AddChild(presetList)
+	refreshJSONData()
 	return {contentsPanel}
 end
 
