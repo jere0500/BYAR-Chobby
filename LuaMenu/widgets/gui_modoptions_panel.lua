@@ -349,7 +349,7 @@ end
 local function PopulatePresetTab()
 	-- now we need to store the object in this class
 	local jsondata;
-	local selectedPreset;
+	local selectedPreset = "defaultPreset";
 
 	local function refreshJSONData()
 		local modfile = io.open("modfile.json", 'r')
@@ -380,10 +380,11 @@ local function PopulatePresetTab()
 		for key,_ in pairs(jsondata) do
 		    table.insert(presetNames, key)
 		end
-		selectedPreset = presetNames[0]
-		Spring.Echo(presetNames)
+		if jsondata[selectedPreset] == nil then
+			selectedPreset = "defaultPreset"
+		end
 	end
-	regeneratePresetName()
+	
 
 
 	local contentsPanel = ScrollPanel:New {
@@ -396,26 +397,27 @@ local function PopulatePresetTab()
 
 	local presetList = {}
 	local function refreshPresetMenu()
+		regeneratePresetName()
 		contentsPanel:RemoveChild(presetList)
 		presetList = ComboBox:New {
-			x = 10,
-			y = 0,
-			width = 300,
-			height = 30,
-			valign = "center",
-			align = "left",
-			objectOverrideFont = WG.Chobby.Configuration:GetFont(2),
-			items = presetNames,
-			selectByName = true,
-			selected = presetNames[0],
-			OnSelectName = {
-				function (obj, selectedName)
-					selectedPreset = selectedName
-				end
-			},
-			itemKeyToName = presetNames, -- Not a chili key
-			-- tooltip = data.desc,
-		}
+					x = 10,
+					y = 0,
+					width = 300,
+					height = 30,
+					valign = "center",
+					align = "left",
+					objectOverrideFont = WG.Chobby.Configuration:GetFont(2),
+					items = presetNames,
+					selectByName = true,
+					selected = selectedPreset,
+					OnSelectName = {
+						function (obj, selectedName)
+							selectedPreset = selectedName
+						end
+					},
+					itemKeyToName = presetNames, -- Not a chili key
+					-- tooltip = data.desc,
+				}
 		contentsPanel:AddChild(presetList)
 	end
 
@@ -439,7 +441,7 @@ local function PopulatePresetTab()
 		}
 	}
 
-	local buttonAccept = Button:New {
+	local buttonSave = Button:New {
 		x = 10,
 		width = 135,
 		y = 240,
@@ -464,14 +466,13 @@ local function PopulatePresetTab()
 
 
 				saveJSONData()
-				regeneratePresetName()
 				refreshPresetMenu()
 
 			end
 		},
 	}
 
-	local buttonReset = Button:New {
+	local buttonLoad = Button:New {
 		x = 155,
 		width = 135,
 		y = 40,
@@ -482,6 +483,7 @@ local function PopulatePresetTab()
 		OnClick = {
 			function()
 				localModoptions = jsondata[selectedPreset]
+				Spring.Echo(localModoptions)
 
 				battleLobby:SetModOptions(localModoptions)
 				window:Dispose()
@@ -501,10 +503,11 @@ local function PopulatePresetTab()
 			function()
 				Spring.Echo("Hi, ready remove element from ")
 				-- want to delete a preset
-				jsondata[selectedPreset] = nil
-				saveJSONData()
-				regeneratePresetName()
-				refreshPresetMenu()
+				if selectedPreset ~= "defaultPreset" then
+					jsondata[selectedPreset] = nil
+					saveJSONData()
+					refreshPresetMenu()
+				end
 			end
 		},
 	}
@@ -512,15 +515,14 @@ local function PopulatePresetTab()
 
 
 	
+
+
 	refreshPresetMenu()
 
-
-
 	contentsPanel:AddChild(presetEditBox)
-	contentsPanel:AddChild(buttonAccept)
-	contentsPanel:AddChild(buttonReset)
+	contentsPanel:AddChild(buttonSave)
+	contentsPanel:AddChild(buttonLoad)
 	contentsPanel:AddChild(buttonDelete)
-	refreshJSONData()
 	return {contentsPanel}
 end
 
