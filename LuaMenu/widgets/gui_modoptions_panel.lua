@@ -39,17 +39,16 @@ local function UpdateControlValue(key, value)
 			control:FocusUpdate()
 		elseif control.Select and control.itemKeyToName then -- combobox
 			control:Select(control.itemKeyToName[value])
-		elseif control.SetToggle then -- checkbox
+		elseif control.SetToggle then          -- checkbox
 			control:SetToggle(value == true or value == 1 or value == "1")
 		end
 	end
 end
 
 local function TextFromNum(num, step)
-
 	-- remove excess accuracy
 	local places = 0
-	if step < 0.01  then
+	if step < 0.01 then
 		places = 3
 	elseif step < 0.1 then
 		places = 2
@@ -117,7 +116,7 @@ local function ProcessListOption(data, index)
 		selectByName = true,
 		selected = defaultItem,
 		OnSelectName = {
-			function (obj, selectedName)
+			function(obj, selectedName)
 				localModoptions[data.key] = itemNameToKey[selectedName]
 			end
 		},
@@ -128,10 +127,10 @@ local function ProcessListOption(data, index)
 
 	return Control:New {
 		x = 0,
-		y = index*32,
+		y = index * 32,
 		width = 1600,
 		height = 32,
-		padding = {0, 0, 0, 0},
+		padding = { 0, 0, 0, 0 },
 		children = {
 			label,
 			list
@@ -170,13 +169,13 @@ local function ProcessBoolOption(data, index)
 		height = 30,
 		boxalign = "right",
 		boxsize = 25,
-		caption = "",--data.name,
+		caption = "", --data.name,
 		checked = checked,
 		objectOverrideFont = WG.Chobby.Configuration:GetFont(2),
 		tooltip = data.desc,
 
 		OnChange = {
-			function (obj, newState)
+			function(obj, newState)
 				localModoptions[data.key] = tostring((newState and 1) or 0)
 			end
 		},
@@ -185,11 +184,11 @@ local function ProcessBoolOption(data, index)
 
 	return Control:New {
 		x = 0,
-		y = index*32,
+		y = index * 32,
 		width = 1600,
 		height = 32,
-		padding = {0, 0, 0, 0},
-    tooltip = data.desc,
+		padding = { 0, 0, 0, 0 },
+		tooltip = data.desc,
 		children = {
 			label,
 			checkBox
@@ -200,7 +199,6 @@ local function ProcessBoolOption(data, index)
 end
 
 local function ProcessNumberOption(data, index)
-
 	local label = Label:New {
 		x = 320,
 		y = 0,
@@ -216,18 +214,18 @@ local function ProcessNumberOption(data, index)
 	local oldText = localModoptions[data.key] or modoptionDefaults[data.key]
 
 	local numberBox = EditBox:New {
-		x = 5,
-		y = 1,
-		width = 300,
-		height = 30,
-		text   = oldText,
-		useIME = false,
-		hint = data.hint,
-		objectOverrideFont = WG.Chobby.Configuration:GetFont(2),
+		x                      = 5,
+		y                      = 1,
+		width                  = 300,
+		height                 = 30,
+		text                   = oldText,
+		useIME                 = false,
+		hint                   = data.hint,
+		objectOverrideFont     = WG.Chobby.Configuration:GetFont(2),
 		objectOverrideHintFont = WG.Chobby.Configuration:GetFont(11),
-		tooltip = data.desc,
-		OnFocusUpdate = {
-			function (obj)
+		tooltip                = data.desc,
+		OnFocusUpdate          = {
+			function(obj)
 				if obj.focused then
 					return
 				end
@@ -242,7 +240,7 @@ local function ProcessNumberOption(data, index)
 				-- Bound the number
 				newValue = math.min(data.max, math.max(data.min, newValue))
 				-- Round to step size
-				newValue = math.floor(newValue/data.step + 0.5)*data.step + 0.01*data.step
+				newValue = math.floor(newValue / data.step + 0.5) * data.step + 0.01 * data.step
 
 				oldText = TextFromNum(newValue, data.step)
 				localModoptions[data.key] = oldText
@@ -254,10 +252,10 @@ local function ProcessNumberOption(data, index)
 
 	return Control:New {
 		x = 0,
-		y = index*32,
+		y = index * 32,
 		width = 1600,
 		height = 32,
-		padding = {0, 0, 0, 0},
+		padding = { 0, 0, 0, 0 },
 		tooltip = data.desc,
 		children = {
 			label,
@@ -267,7 +265,6 @@ local function ProcessNumberOption(data, index)
 end
 
 local function ProcessStringOption(data, index)
-
 	local label = Label:New {
 		x = 320,
 		y = 0,
@@ -283,18 +280,18 @@ local function ProcessStringOption(data, index)
 	local oldText = localModoptions[data.key] or modoptionDefaults[data.key]
 
 	local textBox = EditBox:New {
-		x = 5,
-		y = 1,
-		width = 300,
-		height = 30,
-		text   = oldText,
-		useIME = false,
-		hint = data.hint,
-		objectOverrideFont = WG.Chobby.Configuration:GetFont(2),
+		x                      = 5,
+		y                      = 1,
+		width                  = 300,
+		height                 = 30,
+		text                   = oldText,
+		useIME                 = false,
+		hint                   = data.hint,
+		objectOverrideFont     = WG.Chobby.Configuration:GetFont(2),
 		objectOverrideHintFont = WG.Chobby.Configuration:GetFont(11),
-		tooltip = data.desc,
-		OnFocusUpdate = {
-			function (obj)
+		tooltip                = data.desc,
+		OnFocusUpdate          = {
+			function(obj)
 				if obj.focused then
 					return
 				end
@@ -306,10 +303,10 @@ local function ProcessStringOption(data, index)
 
 	return Control:New {
 		x = 0,
-		y = index*32,
+		y = index * 32,
 		width = 1600,
 		height = 32,
-		padding = {0, 0, 0, 0},
+		padding = { 0, 0, 0, 0 },
 		children = {
 			label,
 			textBox
@@ -343,13 +340,21 @@ local function PopulateTab(options)
 			contentsPanel:AddChild(ProcessStringOption(data, #contentsPanel.children))
 		end
 	end
-	return {contentsPanel}
+	return { contentsPanel }
 end
+
+
+local appliedPreset = nil
 
 local function PopulatePresetTab()
 	-- now we need to store the object in this class
 	local jsondata;
-	local selectedPreset = "defaultPreset";
+	local selectedPreset = appliedPreset
+	
+	if appliedPreset == nil then
+		appliedPreset = "defaultPreset";
+		selectedPreset = "defaultPreset";
+	end
 
 	local function refreshJSONData()
 		local modfile = io.open("modfile.json", 'r')
@@ -366,27 +371,14 @@ local function PopulatePresetTab()
 			-- maybe some logging
 			return
 		end
-		local jsonobj =json.encode(jsondata)
+		local jsonobj = json.encode(jsondata)
 		modfile:write(jsonobj)
 		modfile:close()
 	end
 	-- initial population
 	refreshJSONData()
 
-	-- needs to get repopulated, when creating a new preset
-	local presetNames = {}
-	local function regeneratePresetName()
-		presetNames = {}
-		for key,_ in pairs(jsondata) do
-		    table.insert(presetNames, key)
-		end
-		if jsondata[selectedPreset] == nil then
-			selectedPreset = "defaultPreset"
-		end
-	end
-	
-
-
+	-- parent panel
 	local contentsPanel = ScrollPanel:New {
 		x = 6,
 		right = 5,
@@ -395,82 +387,147 @@ local function PopulatePresetTab()
 		horizontalScrollbar = false,
 	}
 
+	local refreshPresetMenu = function ()
+	end
+
+
+	local function OpenPresetPopup()
+		local openPresetPopup = Window:New {
+			caption = "Create new preset",
+			name = "createNewPreset",
+			parent = contentsPanel,
+			align = "center",
+			width = 500,
+			height = 400,
+			resizable = true,
+			draggable = false,
+			classname = "main_window",
+		}
+
+		local presetEditBox = EditBox:New {
+			x                      = 10,
+			y                      = 10,
+			width                  = 300,
+			height                 = 30,
+			text                   = "",
+			useIME                 = false,
+			hint                   = "enter the name for your preset",
+			parent                 = openPresetPopup,
+			objectOverrideFont     = WG.Chobby.Configuration:GetFont(2),
+			objectOverrideHintFont = WG.Chobby.Configuration:GetFont(11),
+			tooltip                = "enter a name for your preset",
+			OnFocusUpdate          = {
+				-- function(obj)
+				-- 	Spring.Echo("updated")
+				-- end
+			}
+		}
+
+		local buttonSave = Button:New {
+			x = 10,
+			width = 135,
+			y = 50,
+			height = 70,
+			caption = "Save Preset",
+			parent = openPresetPopup,
+			objectOverrideFont = WG.Chobby.Configuration:GetFont(3),
+			classname = "action_button",
+			OnClick = {
+				function()
+					-- if not json then
+					-- 	VFS.Include(LIB_LOBBY_DIRNAME .. "json.lua")
+					-- end
+					-- this only adds all options, which are different from the defaults
+					local preset = "defaultPreset"
+					if (presetEditBox.text ~= nil) then
+						preset = presetEditBox.text
+					end
+
+					--? dont know, if it should also save the current mod options
+					jsondata[preset] = localModoptions
+					selectedPreset = preset
+
+					saveJSONData()
+					refreshPresetMenu()
+					openPresetPopup:Dispose()
+				end
+			},
+		}
+
+		local buttonAbort = Button:New {
+			x = 145,
+			width = 135,
+			y = 50,
+			height = 70,
+			caption = "Abort",
+			parent = openPresetPopup,
+			objectOverrideFont = WG.Chobby.Configuration:GetFont(3),
+			classname = "negative_button",
+			OnClick = {
+				function()
+					refreshPresetMenu()
+					openPresetPopup:Dispose()
+				end
+			},
+		}
+
+		-- openPresetPopup:Show()
+	end
+
+	-- needs to get repopulated, when creating a new preset
+	local presetNames = {}
 	local presetList = {}
-	local function refreshPresetMenu()
-		regeneratePresetName()
+	refreshPresetMenu = function()
+		presetNames = {}
+		if jsondata[selectedPreset] == nil then
+			selectedPreset = "defaultPreset"
+		end
+
+		table.insert(presetNames, selectedPreset)
+		table.insert(presetNames, "<new>")
+		for key, _ in pairs(jsondata) do
+			if (key ~= selectedPreset) then
+				table.insert(presetNames, key)
+			end
+		end
+
+
 		contentsPanel:RemoveChild(presetList)
 		presetList = ComboBox:New {
-					x = 10,
-					y = 0,
-					width = 300,
-					height = 30,
-					valign = "center",
-					align = "left",
-					objectOverrideFont = WG.Chobby.Configuration:GetFont(2),
-					items = presetNames,
-					selectByName = true,
-					selected = selectedPreset,
-					OnSelectName = {
-						function (obj, selectedName)
-							selectedPreset = selectedName
-						end
-					},
-					itemKeyToName = presetNames, -- Not a chili key
-					-- tooltip = data.desc,
-				}
+			x = 10,
+			y = 0,
+			width = 300,
+			height = 30,
+			valign = "center",
+			align = "left",
+			objectOverrideFont = WG.Chobby.Configuration:GetFont(2),
+			items = presetNames,
+			selectByName = true,
+			selected = selectedPreset,
+			OnSelectName = {
+				function(obj, selectedName)
+					if (selectedName == "<new>") then
+						-- handle creation of the popup
+						Spring.Echo("should open the popup")
+						OpenPresetPopup()
+						presetList.selected = appliedPreset
+						selectedPreset = appliedPreset
+						-- open the popup
+					else
+						selectedPreset = selectedName
+					end
+				end
+			},
+			itemKeyToName = presetNames, -- Not a chili key
+			-- tooltip = data.desc,
+		}
 		contentsPanel:AddChild(presetList)
 	end
 
 
 
-	local presetEditBox = EditBox:New {
-		x = 10,
-		y = 200,
-		width = 300,
-		height = 30,
-		text   = "defaultPreset",
-		useIME = false,
-		hint = "whatever hint",
-		objectOverrideFont = WG.Chobby.Configuration:GetFont(2),
-		objectOverrideHintFont = WG.Chobby.Configuration:GetFont(11),
-		tooltip = "whatever tooltip",
-		OnFocusUpdate = {
-			function (obj)
-				Spring.Echo("updated")
-			end
-		}
-	}
-
-	local buttonSave = Button:New {
-		x = 10,
-		width = 135,
-		y = 240,
-		height = 70,
-		caption = "Save Preset",
-		objectOverrideFont = WG.Chobby.Configuration:GetFont(3),
-		classname = "action_button",
-		OnClick = {
-			function()
-
-				-- if not json then
-				-- 	VFS.Include(LIB_LOBBY_DIRNAME .. "json.lua")
-				-- end
-				-- this only adds all options, which are different from the defaults
-				local preset = "defaultPreset"
-				if (presetEditBox.text ~= nil) then
-					preset = presetEditBox.text
-				end
 
 
-				jsondata[preset]=localModoptions
-
-
-				saveJSONData()
-				refreshPresetMenu()
-
-			end
-		},
-	}
 
 	local buttonLoad = Button:New {
 		x = 155,
@@ -482,6 +539,7 @@ local function PopulatePresetTab()
 		classname = "action_button",
 		OnClick = {
 			function()
+				appliedPreset = selectedPreset
 				localModoptions = jsondata[selectedPreset]
 				Spring.Echo(localModoptions)
 
@@ -491,6 +549,25 @@ local function PopulatePresetTab()
 		},
 	}
 
+	local buttonSave = Button:New {
+		x = 300,
+		width = 135,
+		y = 40,
+		height = 70,
+		caption = "Overwrite Preset",
+		objectOverrideFont = WG.Chobby.Configuration:GetFont(3),
+		classname = "action_button",
+		OnClick = {
+			function()
+				jsondata[selectedPreset] = localModoptions
+				saveJSONData()
+				refreshJSONData()
+				-- battleLobby:SetModOptions(localModoptions)
+			end
+		},
+	}
+
+
 	local buttonDelete = Button:New {
 		x = 10,
 		width = 135,
@@ -498,7 +575,7 @@ local function PopulatePresetTab()
 		height = 70,
 		caption = "Delete Preset",
 		objectOverrideFont = WG.Chobby.Configuration:GetFont(3),
-		classname = "action_button",
+		classname = "negative_button",
 		OnClick = {
 			function()
 				Spring.Echo("Hi, ready remove element from ")
@@ -514,16 +591,17 @@ local function PopulatePresetTab()
 
 
 
-	
+
 
 
 	refreshPresetMenu()
 
-	contentsPanel:AddChild(presetEditBox)
-	contentsPanel:AddChild(buttonSave)
+	-- contentsPanel:AddChild(presetEditBox)
+	-- contentsPanel:AddChild(buttonSave)
 	contentsPanel:AddChild(buttonLoad)
 	contentsPanel:AddChild(buttonDelete)
-	return {contentsPanel}
+	contentsPanel:AddChild(buttonSave)
+	return { contentsPanel }
 end
 
 --------------------------------------------------------------------------------
@@ -553,11 +631,12 @@ local function CreateModoptionWindow()
 
 	for key, data in pairs(modoptionStructure.sections) do
 		local caption = modoptionStructure.sectionTitles[data.title] or data.title
-		local weight = modoptionStructure.sectionWeights[data.title] or -#tabs
+		local weight = modoptionStructure.sectionWeights[data.title] or - #tabs
 		local fontSize = 2
 		local tooltip = data.desc
 		local origCaption = caption
-		caption = StringUtilities.GetTruncatedStringWithDotDot(caption, WG.Chobby.Configuration:GetFont(fontSize), tabWidth)
+		caption = StringUtilities.GetTruncatedStringWithDotDot(caption, WG.Chobby.Configuration:GetFont(fontSize),
+			tabWidth)
 		if origCaption ~= caption then
 			tooltip = origCaption
 		end
@@ -577,14 +656,14 @@ local function CreateModoptionWindow()
 		}
 	end
 
-	table.sort(tabs, function(a,b) return a.weight > b.weight end)
+	table.sort(tabs, function(a, b) return a.weight > b.weight end)
 
 	local tabPanel = Chili.DetachableTabPanel:New {
 		x = 4,
 		right = 4,
 		y = 49,
 		bottom = 75,
-		padding = {0, 0, 0, 0},
+		padding = { 0, 0, 0, 0 },
 		minTabWidth = tabWidth,
 		tabs = tabs,
 		parent = modoptionsSelectionWindow,
@@ -600,7 +679,7 @@ local function CreateModoptionWindow()
 		height = 60,
 		resizable = false,
 		draggable = false,
-		padding = {18, 6, 18, 0},
+		padding = { 18, 6, 18, 0 },
 		parent = modoptionsSelectionWindow,
 		children = {
 			Line:New {
@@ -684,7 +763,7 @@ local function CreateModoptionWindow()
 	local popupHolder = WG.Chobby.PriorityPopup(modoptionsSelectionWindow, CancelFunc, AcceptFunc)
 
 	WG.Chobby.lobbyInterfaceHolder.OnResize = WG.Chobby.lobbyInterfaceHolder.OnResize or {}
-	WG.Chobby.lobbyInterfaceHolder.OnResize[#WG.Chobby.lobbyInterfaceHolder.OnResize +1] = function()
+	WG.Chobby.lobbyInterfaceHolder.OnResize[#WG.Chobby.lobbyInterfaceHolder.OnResize + 1] = function()
 		local ww, wh = Spring.GetWindowGeometry()
 
 		local neww = math.min(1366, ww - 50)
@@ -739,7 +818,7 @@ local function InitializeModoptionsDisplay()
 		value = tostring(value)
 		local valueLength = value:len()
 		if valueLength > 32 then
-			value = string.format("%d:%s_%s", valueLength, value:sub(1,16), value:sub(-16))
+			value = string.format("%d:%s_%s", valueLength, value:sub(1, 16), value:sub(-16))
 		end
 		return value
 	end
@@ -763,7 +842,7 @@ local function InitializeModoptionsDisplay()
 				if text ~= "\255\255\255\255" then
 					text = text .. "\255\120\120\120" .. "------" .. "\n"
 				end
-				text = text .. tostring(name).. " = \255\255\255\255" .. shortenedValue(value) .. "\n"
+				text = text .. tostring(name) .. " = \255\255\255\255" .. shortenedValue(value) .. "\n"
 				empty = false
 			end
 		end
@@ -832,7 +911,8 @@ function ModoptionsPanel.RefreshModoptions()
 		else
 			if data.section then
 				if data.hidden ~= true then
-					modoptionStructure.sections[data.section] = modoptionStructure.sections[data.section] or {
+					modoptionStructure.sections[data.section] = modoptionStructure.sections
+					[data.section] or {
 						title = data.section,
 						options = {}
 					}
@@ -841,7 +921,7 @@ function ModoptionsPanel.RefreshModoptions()
 					options[#options + 1] = data
 				elseif showHidden and devmode then
 					if not data.name:find("(HIDDEN)") then
-						data.name = "(HIDDEN) "..data.name
+						data.name = "(HIDDEN) " .. data.name
 					end
 					postpendHiddenOptions[#postpendHiddenOptions + 1] = data
 				end
@@ -867,7 +947,7 @@ function ModoptionsPanel.RefreshModoptions()
 			}
 			local options = modoptionStructure.sections[data.section].options
 			options[#options + 1] = data
-		end	
+		end
 	end
 end
 
