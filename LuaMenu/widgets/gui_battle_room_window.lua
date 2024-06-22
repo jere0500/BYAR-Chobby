@@ -1187,6 +1187,26 @@ local function SetupInfoButtonsPanel(leftInfo, rightInfo, battle, battleID, myUs
 		parent = leftInfo,
 	}
 	leftOffset = leftOffset + 40
+	local btnOptionPresets = Button:New {
+		name = 'btnOptionpresets',
+		x = 5,
+		y = leftOffset,
+		height = 35,
+		right = 5,
+		classname = "option_button",
+		caption = "Option Presets" .. "\b",
+		objectOverrideFont = config:GetFont(2),
+		objectOverrideDisabledFont = config:GetFont(1),
+		hasDisabledFont = true,
+		tooltip = tooltip,
+		OnClick = {
+			function()
+					WG.Optionpresetspanel.CreateOptionpresetWindow()
+			end
+		},
+		parent = leftInfo,
+	}
+	leftOffset = leftOffset + 40
 
 	-- gray out the button if we don't have a modoptions panel to show
 	if not modoptions then
@@ -1336,6 +1356,8 @@ local function SetupInfoButtonsPanel(leftInfo, rightInfo, battle, battleID, myUs
 		btnPickMap:SetPos(nil, offset)
 		offset = offset + 38
 		btnModoptions:SetPos(nil, offset)
+		offset = offset + 40
+		btnOptionPresets:SetPos(nil, offset)
 		offset = offset + 40
 		lblGame:SetPos(nil, offset)
 		offset = offset + 26
