@@ -18,6 +18,9 @@ local modoptionStructure = {}
 
 -- Variables
 local battleLobby
+local battle
+
+-- edited by the preset 
 local currentModoptions = {}
 local currentMap
 
@@ -79,6 +82,10 @@ local function applyPreset(presetName)
 		if (localModoptions ~= nil) then
 			battleLobby:SetModOptions(localModoptions)
 		end
+		local presetMapName = presetObj["map"]
+		if(presetMapName ~= nil) then
+			battleLobby:SelectMap(presetMapName)
+		end
 	end
 end
 
@@ -90,6 +97,7 @@ local function deletePreset(presetName)
 	end
 end
 
+-- also creates new Presets
 local function overwritePreset(presetName)
 	local preset = presetName
 	if (presetName == nil) then
@@ -98,9 +106,17 @@ local function overwritePreset(presetName)
 	if jsondata[preset] == nil then
 		jsondata[preset] = {}
 	end
+	if jsondata[preset]["modoptions"] == nil then
+		jsondata[preset]["modoptions"] = {}
+	end
+	if jsondata[preset]["map"] == nil then
+		jsondata[preset]["map"] = {}
+	end
 
-	--? dont know, if it should also save the current mod options
 	jsondata[preset]["modoptions"] = localModoptions
+	jsondata[preset]["map"] = currentMap
+
+
 	selectedPreset = preset
 
 	saveJSONData()
@@ -384,6 +400,16 @@ end
 
 
 function OptionpresetsPanel.ShowModoptions()
+	-- getting the correct values
+	battleLobby = WG.LibLobby.localLobby
+	localModoptions = Spring.Utilities.CopyTable(battleLobby:GetMyBattleModoptions() or {})
+	for key, value in pairs(localModoptions) do
+		Spring.Echo(key)
+		Spring.Echo(value)
+	end
+	-- need to get the modoptions
+	battle = battleLobby:GetBattle(battleLobby:GetMyBattleID())
+	currentMap = battle.mapName
 	CreateOptionpresetWindow()
 end
 
@@ -393,12 +419,5 @@ function widget:Initialize()
 	VFS.Include("libs/json.lua")
 
 	WG.OptionpresetsPanel = OptionpresetsPanel
-	battleLobby = WG.LibLobby.localLobby
-	localModoptions = Spring.Utilities.CopyTable(battleLobby:GetMyBattleModoptions() or {})
-	for key, value in pairs(localModoptions) do
-		Spring.Echo(key)
-		Spring.Echo(value)
-	end
-	-- need to get the modoptions
-	
+
 end
