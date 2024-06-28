@@ -27,6 +27,7 @@ local mainWindowFunctions
 
 local showDefaultStartCheckbox = false
 local currentStartRects = {}
+local startRectValues = {} -- try1 for export
 
 local singleplayerWrapper
 local multiplayerWrapper
@@ -1564,6 +1565,9 @@ local function SetupInfoButtonsPanel(leftInfo, rightInfo, battle, battleID, myUs
 		-- it doesnt even know how big it is right nowhere
 		-- Spring.Utilities.TraceFullEcho()
 
+		-- for export, does not work, because the assignment is static, 
+		startRectValues[allyNo+1]={["left"]=left, ["top"]=top, ["right"]=right, ["bottom"]=bottom}
+
 		local minimapPanelMaxSize = math.max(minimapPanel.width,minimapPanel.height) -1
 		local ox = math.floor(left * minimapPanelMaxSize / 200)
 		local oy = math.floor(top * minimapPanelMaxSize / 200)
@@ -1619,6 +1623,9 @@ local function SetupInfoButtonsPanel(leftInfo, rightInfo, battle, battleID, myUs
 						--also do the fact that it should be red on change, and turn back black on successfull modification
 						--try to manage clicking on the startbox not changing it.
 						--TODO: problematic when resizing entire UI :/
+
+						--could also update the assigned 
+						startRectValues[tonumber(obj.caption)]={["left"]=l, ["top"]=t, ["right"]=r, ["bottom"]=b}
 
 						obj:Invalidate() --doesnt do much
 						if battleLobby.name == "singleplayer" then
@@ -4152,6 +4159,16 @@ function BattleRoomWindow.ClearChatHistory()
 	if mainWindowFunctions and mainWindowFunctions.ClearChatHistory then
 		mainWindowFunctions.ClearChatHistory()
 	end
+end
+
+
+function BattleRoomWindow.GetCurrentStartRects()
+	return startRectValues
+end
+
+function BattleRoomWindow.AddStartRect(allyNo, left, top, right, bottom)
+	local infoHandler = mainWindowFunctions.GetInfoHandler()
+	infoHandler.AddStartRect(allyNo, left, top, right, bottom)
 end
 
 local function DelayedInitialize()

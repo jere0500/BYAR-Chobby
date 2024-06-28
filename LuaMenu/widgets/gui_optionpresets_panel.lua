@@ -20,9 +20,11 @@ local modoptionStructure = {}
 local battleLobby
 local battle
 
--- edited by the preset 
+-- edited by the preset
 local currentModoptions = {}
 local currentMap
+local currentAINames
+local currentStartRects
 
 local window
 local OptionpresetsPanel = {}
@@ -83,8 +85,19 @@ local function applyPreset(presetName)
 			battleLobby:SetModOptions(localModoptions)
 		end
 		local presetMapName = presetObj["map"]
-		if(presetMapName ~= nil) then
+		if (presetMapName ~= nil) then
 			battleLobby:SelectMap(presetMapName)
+		end
+		local presetRectangles = presetObj["startingRects"]
+		if (presetRectangles ~= nil) then
+			-- local brStartRects = WG.BattleRoomWindow.GetCurrentStartRects2()
+			for index, value in ipairs(presetRectangles) do
+				local l = value["left"]
+				local r = value["right"]
+				local t = value["top"]
+				local b = value["bottom"]
+				WG.BattleRoomWindow.AddStartRect(index-1, l, t, r, b)
+			end
 		end
 	end
 end
@@ -112,9 +125,17 @@ local function overwritePreset(presetName)
 	if jsondata[preset]["map"] == nil then
 		jsondata[preset]["map"] = {}
 	end
+	if jsondata[preset]["ai"] == nil then
+		jsondata[preset]["ai"] = {}
+	end
+	if jsondata[preset]["startingRects"] == nil then
+		jsondata[preset]["startingRects"] = {}
+	end
 
 	jsondata[preset]["modoptions"] = localModoptions
 	jsondata[preset]["map"] = currentMap
+	jsondata[preset]["ai"] = currentAINames
+	jsondata[preset]["startingRects"] = currentStartRects
 
 
 	selectedPreset = preset
@@ -144,8 +165,8 @@ local function PopulatePresetTab()
 			name = "createNewPreset",
 			parent = contentsPanel,
 			align = "center",
-			width = 200,
-			height = 100,
+			width = 500,
+			height = 200,
 			resizable = false,
 			draggable = false,
 			classname = "main_window",
@@ -340,14 +361,13 @@ local function CreateOptionpresetWindow()
 		name = "optionpresetSelectionWindow",
 		parent = WG.Chobby.lobbyInterfaceHolder,
 		width = math.min(650, ww - 50),
-		height = math.min(200, wh - 50),
+		height = math.min(300, wh - 50),
 		resizable = false,
 		draggable = false,
 		classname = "main_window",
 	}
 
 	currentModoptions = Spring.Utilities.CopyTable(battleLobby:GetMyBattleModoptions() or {})
-	Spring.Echo(currentModoptions)
 
 	local buttonCancel = Button:New {
 		right = 6,
@@ -403,13 +423,17 @@ function OptionpresetsPanel.ShowModoptions()
 	-- getting the correct values
 	battleLobby = WG.LibLobby.localLobby
 	localModoptions = Spring.Utilities.CopyTable(battleLobby:GetMyBattleModoptions() or {})
-	for key, value in pairs(localModoptions) do
-		Spring.Echo(key)
-		Spring.Echo(value)
-	end
 	-- need to get the modoptions
 	battle = battleLobby:GetBattle(battleLobby:GetMyBattleID())
+
+	-- not available in mp
 	currentMap = battle.mapName
+
+
+	currentAINames = battleLobby.battleAis
+
+	currentStartRects = WG.BattleRoomWindow.GetCurrentStartRects()
+
 	CreateOptionpresetWindow()
 end
 
@@ -419,5 +443,4 @@ function widget:Initialize()
 	VFS.Include("libs/json.lua")
 
 	WG.OptionpresetsPanel = OptionpresetsPanel
-
 end
