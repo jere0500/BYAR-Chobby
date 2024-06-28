@@ -24,6 +24,7 @@ local battle
 local currentModoptions = {}
 local currentMap
 local currentAINames
+local currentAITable = {}
 local currentStartRects
 
 local window
@@ -96,8 +97,43 @@ local function applyPreset(presetName)
 				local r = value["right"]
 				local t = value["top"]
 				local b = value["bottom"]
-				WG.BattleRoomWindow.AddStartRect(index-1, l, t, r, b)
+				WG.BattleRoomWindow.AddStartRect(index - 1, l, t, r, b)
 			end
+		end
+		local presetAi = presetObj["ai"]
+		if presetAi ~= nil then
+			local newAiNames ={}
+
+			for _, value in pairs(currentAINames) do
+				Spring.Echo("currentAINames-----")
+				Spring.Echo(value)
+				battleLobby:RemoveAi(value)
+			end
+
+			for key, value in pairs(presetAi) do
+				table.insert(newAiNames, key)
+				local battlestatusoptions = {}
+				battlestatusoptions.teamColor = value.teamColor
+				battlestatusoptions.side = value.side
+				battleLobby:AddAi(key, value.aiLib, value.allyNumber, value.aiVersion, value.aiOptions,
+					battlestatusoptions)
+			end
+			-- remove all ai, which are not part of the newAiNames
+			-- for _, oldname in pairs(currentAINames) do
+			-- 	Spring.Echo("oldname---------------")
+			-- 	Spring.Echo(oldname)
+			-- 	local found = false
+			-- 	for _, newName in pairs(newAiNames) do
+			-- 		if oldname == newName then
+			-- 			found = true
+			-- 			Spring.Echo(newName)
+			-- 		end
+			-- 	end
+			-- 	if not found then
+			-- 		Spring.Echo("removing oldname----------")
+			-- 		battleLobby:RemoveAi(oldname)
+			-- 	end
+			-- end
 		end
 	end
 end
@@ -134,7 +170,7 @@ local function overwritePreset(presetName)
 
 	jsondata[preset]["modoptions"] = localModoptions
 	jsondata[preset]["map"] = currentMap
-	jsondata[preset]["ai"] = currentAINames
+	jsondata[preset]["ai"] = currentAITable
 	jsondata[preset]["startingRects"] = currentStartRects
 
 
@@ -431,8 +467,37 @@ function OptionpresetsPanel.ShowModoptions()
 
 
 	currentAINames = battleLobby.battleAis
+	-- local otherLobby = WG.Chobby.localLobby
+	-- local otherLobby2 = WG.LibLobby.lobby
+	-- Spring.Echo(currentAINames)
+	for _, value in pairs(currentAINames) do
+		-- Spring.Echo(value)
+		local aiStatus = battleLobby:GetUserBattleStatus(value)
+		if (aiStatus ~= nil) then
+			currentAITable[value] = aiStatus
+			-- Spring.Echo(aiStatus)
+			-- Spring.Echo(aiStatus.aiLib)
+			-- Spring.Echo(aiStatus.allyNumber)
+			-- Spring.Echo(aiStatus.owner)
+			-- Spring.Echo(aiStatus.aiVersion)
+			-- Spring.Echo(aiStatus.aiOptions)
+			-- Spring.Echo(aiStatus.teamColor)
+			-- Spring.Echo(aiStatus.side)
+		else
+		Spring.Echo("skipped because of null")
+		end
+	end
 
 	currentStartRects = WG.BattleRoomWindow.GetCurrentStartRects()
+
+	-- testing removing teams 2
+	-- this works completly and delets also all the bots
+	-- local playerHandler = WG.BattleRoomWindow.GetPlayerHandler()
+	-- Spring.Echo(playerHandler)
+	-- local team = playerHandler.GetTeam(2)
+	-- Spring.Echo(team)
+	-- team = playerHandler.GetTeam(0).RemoveTeam()
+	-- Spring.Echo(team)
 
 	CreateOptionpresetWindow()
 end
