@@ -56,6 +56,7 @@ local vote_votingsPattern = "(%d+)/(%d+).-:(%d+)"
 local vote_whoCalledPattern = "%* (.*) called a vote for command"
 local vote_mapPattern = 'set map (.*)"'
 
+local playerHandler
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
 -- Download management
@@ -1672,6 +1673,7 @@ local function SetupInfoButtonsPanel(leftInfo, rightInfo, battle, battleID, myUs
 			if currentStartRects[allyNo+1] then
 				currentStartRects[allyNo+1]:Dispose()
 				currentStartRects[allyNo+1] = nil
+				startRectValues[allyNo+1] = nil
 			end
 			for i,rect in pairs(currentStartRects) do
 				rect:BringToFront()
@@ -1940,6 +1942,7 @@ local function SetupPlayerPanel(playerParent, spectatorParent, battle, battleID)
 						if button == 3 and WG.Chobby.Configuration.lastAddedAiName then
 							quickAddAi = WG.Chobby.Configuration.lastAddedAiName
 						end
+
 						WG.PopupPreloader.ShowAiListWindow(battleLobby, battle.gameName, teamIndex, quickAddAi)
 					end,
 					disallowCustomTeams and teamIndex ~= 0,
@@ -2216,6 +2219,13 @@ local function SetupPlayerPanel(playerParent, spectatorParent, battle, battleID)
 
 	function externalFunctions.RemoveAi(botName)
 		RemovePlayerFromTeam(botName)
+	end
+
+	function externalFunctions.GetTeam(index)
+		if(index >= emptyTeamIndex)then
+			OpenNewTeam()
+		end
+		return GetTeam(index)
 	end
 
 	return externalFunctions
@@ -3067,7 +3077,7 @@ local function InitializeControls(battleID, oldLobby, topPoportion, setupData)
 		parent = bottomPanel,
 	}
 
-	local playerHandler = SetupPlayerPanel(playerPanel, spectatorPanel, battle, battleID)
+	playerHandler = SetupPlayerPanel(playerPanel, spectatorPanel, battle, battleID)
 
 
 	spadsStatusPanel = Control:New{
@@ -4169,6 +4179,10 @@ end
 function BattleRoomWindow.AddStartRect(allyNo, left, top, right, bottom)
 	local infoHandler = mainWindowFunctions.GetInfoHandler()
 	infoHandler.AddStartRect(allyNo, left, top, right, bottom)
+end
+
+function BattleRoomWindow.GetPlayerHandler()
+	return playerHandler
 end
 
 local function DelayedInitialize()
