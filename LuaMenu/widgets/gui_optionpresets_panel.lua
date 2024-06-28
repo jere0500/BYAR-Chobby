@@ -23,7 +23,6 @@ local battle
 -- edited by the preset
 local currentModoptions = {}
 local currentMap
-local currentAINames
 local currentAITable = {}
 local currentStartRects
 
@@ -104,14 +103,15 @@ local function applyPreset(presetName)
 		if presetAi ~= nil then
 			local newAiNames ={}
 
-			for _, value in pairs(currentAINames) do
-				Spring.Echo("currentAINames-----")
-				Spring.Echo(value)
-				battleLobby:RemoveAi(value)
+			Spring.Echo(#currentAITable)
+			for key, _ in pairs(currentAITable) do
+				Spring.Echo("currentAITable-----")
+				Spring.Echo(key)
+				battleLobby:RemoveAi(key)
 			end
-
+			currentAITable = {}
 			for key, value in pairs(presetAi) do
-				table.insert(newAiNames, key)
+				currentAITable[key] =value
 				local battlestatusoptions = {}
 				battlestatusoptions.teamColor = value.teamColor
 				battlestatusoptions.side = value.side
@@ -466,10 +466,13 @@ function OptionpresetsPanel.ShowModoptions()
 	currentMap = battle.mapName
 
 
-	currentAINames = battleLobby.battleAis
+	local currentAINames = battleLobby.battleAis
+	Spring.Echo("currentAIName ------------23----------")
+	Spring.Echo(#currentAINames)
 	-- local otherLobby = WG.Chobby.localLobby
 	-- local otherLobby2 = WG.LibLobby.lobby
 	-- Spring.Echo(currentAINames)
+	currentAITable = {}
 	for _, value in pairs(currentAINames) do
 		-- Spring.Echo(value)
 		local aiStatus = battleLobby:GetUserBattleStatus(value)
