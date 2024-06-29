@@ -20,6 +20,15 @@ local modoptionStructure = {}
 local battleLobby
 local battle
 
+-- enabled options
+local enabledOptions = {}
+local function printEnabledOptions()
+	Spring.Echo("print enabled options----------------")
+	for key, value in pairs(enabledOptions) do
+		Spring.Echo(tostring(key) .. tostring(value))
+	end
+end
+
 -- edited by the preset
 local currentModoptions = {}
 local currentMap
@@ -43,6 +52,68 @@ if appliedPreset == nil then
 	appliedPreset = "defaultPreset";
 	selectedPreset = "defaultPreset";
 end
+
+-- copyied from gui_modoptions_panel: used for generate the 
+local function ProcessBoolOption(name, active, index)
+	-- setting the label
+	local label = Label:New {
+		x = 35,
+		y = 0,
+		width = 1200,
+		height = 30,
+		valign = "center",
+		align = "left",
+		caption = name,
+		objectOverrideFont = WG.Chobby.Configuration:GetFont(2),
+	}
+
+	-- local oldText = localModoptions[data.key] or modoptionDefaults[data.key]
+
+	-- check if the option should be ticked or not
+	-- local checked = false
+	-- if localModoptions[data.key] == nil then
+	-- 	if modoptionDefaults[data.key] == "1" then
+	-- 		checked = true
+	-- 	end
+	-- elseif localModoptions[data.key] == "1" then
+	-- 	checked = true
+	-- end
+
+	local checkBox = Checkbox:New {
+		x = 5,
+		y = 0,
+		width = 30,
+		height = 30,
+		boxalign = "left",
+		boxsize = 25,
+		caption = "", --data.name,
+		checked = active,
+		objectOverrideFont = WG.Chobby.Configuration:GetFont(2),
+
+		OnChange = {
+			function(obj, newState)
+				enabledOptions[name] = ((newState and true) or false)
+				printEnabledOptions()
+			end
+		},
+	}
+	-- modoptionControlNames[data.key] = checkBox
+
+	return Control:New {
+		x = 0,
+		y = index * 32,
+		width = 1600,
+		height = 32,
+		padding = { 0, 0, 0, 0 },
+		children = {
+			label,
+			checkBox
+		}
+	}
+
+	--return checkBox
+end
+
 
 local refreshPresetMenu = function()
 end
@@ -82,15 +153,15 @@ local function applyPreset(presetName)
 	local presetObj = jsondata[presetName]
 	if presetObj ~= nil then
 		localModoptions = presetObj["modoptions"]
-		if (localModoptions ~= nil) then
+		if (localModoptions ~= nil and enabledOptions["modoptions"]) then
 			battleLobby:SetModOptions(localModoptions)
 		end
 		local presetMapName = presetObj["map"]
-		if (presetMapName ~= nil) then
+		if (presetMapName ~= nil and enabledOptions["map"]) then
 			battleLobby:SelectMap(presetMapName)
 		end
 		local presetRectangles = presetObj["startingRects"]
-		if (presetRectangles ~= nil) then
+		if (presetRectangles ~= nil and enabledOptions["startingRects"]) then
 			WG.BattleRoomWindow.RemoveStartRect()
 			-- local brStartRects = WG.BattleRoomWindow.GetCurrentStartRects2()
 			for index, value in ipairs(presetRectangles) do
@@ -102,7 +173,7 @@ local function applyPreset(presetName)
 			end
 		end
 		local presetAi = presetObj["ai"]
-		if presetAi ~= nil then
+		if presetAi ~= nil and enabledOptions["ai"] then
 			local newAiNames = {}
 
 			Spring.Echo(#currentAITable)
@@ -121,7 +192,7 @@ local function applyPreset(presetName)
 					battlestatusoptions)
 			end
 		local startPosType = presetObj["startPosType"]
-		if startPosType~=nil then
+		if startPosType~=nil and enabledOptions["startPosType"] then
 			WG.BattleRoomWindow.SetBattleStartPosType(startPosType)
 		end
 			-- remove all ai, which are not part of the newAiNames
@@ -163,14 +234,14 @@ local function overwritePreset(presetName)
 		jsondata[preset] = {}
 	end
 
-	if localModoptions ~= nil then
+	if localModoptions ~= nil and enabledOptions["modoptions"] then
 		if jsondata[preset]["modoptions"] == nil then
 			jsondata[preset]["modoptions"] = {}
 		end
 		jsondata[preset]["modoptions"] = localModoptions
 	end
 
-	if currentMap ~= nil then
+	if currentMap ~= nil and enabledOptions["map"]then
 		if jsondata[preset]["map"] == nil then
 			jsondata[preset]["map"] = {}
 		end
@@ -179,21 +250,21 @@ local function overwritePreset(presetName)
 
 
 	if currentAITable ~= nil then
-		if jsondata[preset]["ai"] == nil then
+		if jsondata[preset]["ai"] and enabledOptions["ai"]== nil then
 			jsondata[preset]["ai"] = {}
 		end
 		jsondata[preset]["ai"] = currentAITable
 	end
 
 	if currentStartRects ~= nil then
-		if jsondata[preset]["startingRects"] == nil then
+		if jsondata[preset]["startingRects"] and enabledOptions["startingRects"]== nil then
 			jsondata[preset]["startingRects"] = {}
 		end
 		jsondata[preset]["startingRects"] = currentStartRects
 	end
 
 	if currentStartPosType ~= nil then
-		if jsondata[preset]["startPosType"] == nil then
+		if jsondata[preset]["startPosType"] == nil and enabledOptions["startPosType"] then
 			jsondata[preset]["startPosType"] = {}
 		end
 		jsondata[preset]["startPosType"] = currentStartPosType
@@ -483,6 +554,32 @@ local function CreateOptionpresetWindow()
 	window = optionpresetWindow
 	-- window:AddChild(PopulatePresetTab())
 	PopulatePresetTab()
+
+
+	-- adding the enabled/ disabled options
+	-- preparing the array
+	-- first all should be enabled, keys are the same as in the localjson
+	enabledOptions["modoptions"] = true
+	enabledOptions["map"] = true
+	enabledOptions["ai"] = true
+	enabledOptions["startingRects"] = true
+	enabledOptions["startPosType"] = true
+	
+	-- to add a bit of offset
+	
+	local contentsPanel = ScrollPanel:New {
+		x = 5,
+		y = 130,
+		height = 100,
+		width = 400,
+		parent = window,
+		horizontalScrollbar = false,
+	}
+	local counter = 0
+	for key, value in pairs(enabledOptions) do
+		contentsPanel:AddChild(ProcessBoolOption(key, value, counter))
+		counter=counter + 1
+	end
 end
 
 
