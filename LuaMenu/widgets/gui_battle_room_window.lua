@@ -57,6 +57,9 @@ local vote_whoCalledPattern = "%* (.*) called a vote for command"
 local vote_mapPattern = 'set map (.*)"'
 
 local playerHandler
+
+-- for handling external changes
+local comboboxstartpostype 
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
 -- Download management
@@ -723,8 +726,12 @@ local function SetupInfoButtonsPanel(leftInfo, rightInfo, battle, battleID, myUs
 		}
 	end
 	--]]
-	if battleLobby.name == "singleplayer" and config.devMode then 
-		local comboboxstartpostype = ComboBox:New{
+	if battleLobby.name == "singleplayer" and config.devMode then
+		local ItemList ={"Fixed", "Random", "Choose In Game", "Choose Before Game"}
+	
+		local function createcomboboxstartpostype(selected)
+		rightInfo:RemoveChild(comboboxstartpostype)
+		comboboxstartpostype = ComboBox:New{
 			name = 'comboboxstartpostype',
 			x = 0,
 			bottom = 100,
@@ -735,8 +742,8 @@ local function SetupInfoButtonsPanel(leftInfo, rightInfo, battle, battleID, myUs
 			captionHorAlign = -12,
 			text = "",
 			objectOverrideFont = config:GetFont(2),
-			items = {"Fixed", "Random", "Choose In Game", "Choose Before Game"},
-			selected = "Choose In Game",
+			items = ItemList,
+			selected = ItemList[selected],
 			OnSelectName = {
 				function (obj, selectedName)
 					for k,v in ipairs  {"Fixed", "Random", "Choose In Game", "Choose Before Game"} do
@@ -751,6 +758,13 @@ local function SetupInfoButtonsPanel(leftInfo, rightInfo, battle, battleID, myUs
 			},
 			parent = rightInfo,
 		}
+		end
+		createcomboboxstartpostype(3)
+
+		function externalFunctions.SetBattleStartPosType(startpos)
+			battle.startPosType = startpos
+			createcomboboxstartpostype(startpos)
+		end
 	end
 
 
@@ -4179,6 +4193,24 @@ end
 function BattleRoomWindow.AddStartRect(allyNo, left, top, right, bottom)
 	local infoHandler = mainWindowFunctions.GetInfoHandler()
 	infoHandler.AddStartRect(allyNo, left, top, right, bottom)
+end
+
+function BattleRoomWindow.RemoveStartRect(allyNo)
+	local infoHandler = mainWindowFunctions.GetInfoHandler()
+	infoHandler.RemoveStartRect(allyNo)
+end
+
+
+function BattleRoomWindow.SetStart(allyNo)
+	local infoHandler = mainWindowFunctions.GetInfoHandler()
+	infoHandler.RemoveStartRect(allyNo)
+end
+function BattleRoomWindow.SetBattleStartPosType(startpos)
+	local infoHandler = mainWindowFunctions.GetInfoHandler()
+	if (infoHandler.SetBattleStartPosType ~= nil) then
+		Spring.Echo("----Setting battleStartPos Type")
+		infoHandler.SetBattleStartPosType(startpos)
+	end
 end
 
 function BattleRoomWindow.GetPlayerHandler()

@@ -25,6 +25,7 @@ local currentModoptions = {}
 local currentMap
 local currentAITable = {}
 local currentStartRects
+local currentStartPosType
 
 local window
 local OptionpresetsPanel = {}
@@ -90,6 +91,7 @@ local function applyPreset(presetName)
 		end
 		local presetRectangles = presetObj["startingRects"]
 		if (presetRectangles ~= nil) then
+			WG.BattleRoomWindow.RemoveStartRect()
 			-- local brStartRects = WG.BattleRoomWindow.GetCurrentStartRects2()
 			for index, value in ipairs(presetRectangles) do
 				local l = value["left"]
@@ -101,7 +103,7 @@ local function applyPreset(presetName)
 		end
 		local presetAi = presetObj["ai"]
 		if presetAi ~= nil then
-			local newAiNames ={}
+			local newAiNames = {}
 
 			Spring.Echo(#currentAITable)
 			for key, _ in pairs(currentAITable) do
@@ -111,13 +113,17 @@ local function applyPreset(presetName)
 			end
 			currentAITable = {}
 			for key, value in pairs(presetAi) do
-				currentAITable[key] =value
+				currentAITable[key] = value
 				local battlestatusoptions = {}
 				battlestatusoptions.teamColor = value.teamColor
 				battlestatusoptions.side = value.side
 				battleLobby:AddAi(key, value.aiLib, value.allyNumber, value.aiVersion, value.aiOptions,
 					battlestatusoptions)
 			end
+		local startPosType = presetObj["startPosType"]
+		if startPosType~=nil then
+			WG.BattleRoomWindow.SetBattleStartPosType(startPosType)
+		end
 			-- remove all ai, which are not part of the newAiNames
 			-- for _, oldname in pairs(currentAINames) do
 			-- 	Spring.Echo("oldname---------------")
@@ -152,26 +158,47 @@ local function overwritePreset(presetName)
 	if (presetName == nil) then
 		preset = "defaultPreset"
 	end
+
 	if jsondata[preset] == nil then
 		jsondata[preset] = {}
 	end
-	if jsondata[preset]["modoptions"] == nil then
-		jsondata[preset]["modoptions"] = {}
-	end
-	if jsondata[preset]["map"] == nil then
-		jsondata[preset]["map"] = {}
-	end
-	if jsondata[preset]["ai"] == nil then
-		jsondata[preset]["ai"] = {}
-	end
-	if jsondata[preset]["startingRects"] == nil then
-		jsondata[preset]["startingRects"] = {}
+
+	if localModoptions ~= nil then
+		if jsondata[preset]["modoptions"] == nil then
+			jsondata[preset]["modoptions"] = {}
+		end
+		jsondata[preset]["modoptions"] = localModoptions
 	end
 
-	jsondata[preset]["modoptions"] = localModoptions
-	jsondata[preset]["map"] = currentMap
-	jsondata[preset]["ai"] = currentAITable
-	jsondata[preset]["startingRects"] = currentStartRects
+	if currentMap ~= nil then
+		if jsondata[preset]["map"] == nil then
+			jsondata[preset]["map"] = {}
+		end
+		jsondata[preset]["map"] = currentMap
+	end
+
+
+	if currentAITable ~= nil then
+		if jsondata[preset]["ai"] == nil then
+			jsondata[preset]["ai"] = {}
+		end
+		jsondata[preset]["ai"] = currentAITable
+	end
+
+	if currentStartRects ~= nil then
+		if jsondata[preset]["startingRects"] == nil then
+			jsondata[preset]["startingRects"] = {}
+		end
+		jsondata[preset]["startingRects"] = currentStartRects
+	end
+
+	if currentStartPosType ~= nil then
+		if jsondata[preset]["startPosType"] == nil then
+			jsondata[preset]["startPosType"] = {}
+		end
+		jsondata[preset]["startPosType"] = currentStartPosType
+	end
+
 
 
 	selectedPreset = preset
@@ -279,11 +306,17 @@ local function PopulatePresetTab()
 			selectedPreset = "defaultPreset"
 		end
 
+		table.sort(jsondata)
 		table.insert(presetNames, selectedPreset)
 		table.insert(presetNames, "<new>")
+		local jsonNames = {}
 		for key, _ in pairs(jsondata) do
-			if (key ~= selectedPreset) then
-				table.insert(presetNames, key)
+			table.insert(jsonNames, key)
+		end
+		table.sort(jsonNames)
+		for _, value in pairs(jsonNames) do
+			if (value ~= selectedPreset) then
+				table.insert(presetNames, value)
 			end
 		end
 
@@ -461,9 +494,15 @@ function OptionpresetsPanel.ShowModoptions()
 	localModoptions = Spring.Utilities.CopyTable(battleLobby:GetMyBattleModoptions() or {})
 	-- need to get the modoptions
 	battle = battleLobby:GetBattle(battleLobby:GetMyBattleID())
+	if battle then
+		-- not available in mp
+		currentMap = battle.mapName
 
-	-- not available in mp
-	currentMap = battle.mapName
+		-- get the currentStartPos type
+		currentStartPosType = battle.startPosType
+	else
+		Spring.Echo("No battle found")
+	end
 
 
 	local currentAINames = battleLobby.battleAis
@@ -478,16 +517,8 @@ function OptionpresetsPanel.ShowModoptions()
 		local aiStatus = battleLobby:GetUserBattleStatus(value)
 		if (aiStatus ~= nil) then
 			currentAITable[value] = aiStatus
-			-- Spring.Echo(aiStatus)
-			-- Spring.Echo(aiStatus.aiLib)
-			-- Spring.Echo(aiStatus.allyNumber)
-			-- Spring.Echo(aiStatus.owner)
-			-- Spring.Echo(aiStatus.aiVersion)
-			-- Spring.Echo(aiStatus.aiOptions)
-			-- Spring.Echo(aiStatus.teamColor)
-			-- Spring.Echo(aiStatus.side)
 		else
-		Spring.Echo("skipped because of null")
+			Spring.Echo("skipped because of null")
 		end
 	end
 
