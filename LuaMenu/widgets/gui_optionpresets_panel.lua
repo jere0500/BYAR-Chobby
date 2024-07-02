@@ -53,7 +53,7 @@ if appliedPreset == nil then
 	selectedPreset = "defaultPreset";
 end
 
--- copyied from gui_modoptions_panel: used for generate the 
+-- copied from gui_modoptions_panel: used for generate the 
 local function ProcessBoolOption(name, active, index)
 	-- setting the label
 	local label = Label:New {
@@ -158,17 +158,26 @@ local function applyPreset(presetName)
 		end
 		local presetMapName = presetObj["map"]
 		if (presetMapName ~= nil and enabledOptions["map"]) then
+			-- selection 1
+			Spring.Echo("way 1")
 			battleLobby:SelectMap(presetMapName)
+			-- Spring.Echo("way 2")
+			-- WG.Chobby.localLobby:SelectMap(presetMapName)
+			-- Spring.Echo("way 3")
+			-- WG.LibLobby.lobby:SelectMap(presetMapName)
 		end
 		local presetRectangles = presetObj["startingRects"]
 		if (presetRectangles ~= nil and enabledOptions["startingRects"]) then
 			WG.BattleRoomWindow.RemoveStartRect()
 			-- local brStartRects = WG.BattleRoomWindow.GetCurrentStartRects2()
+			--
+			WG.BattleRoomWindow.SetTeams(#presetRectangles)
 			for index, value in ipairs(presetRectangles) do
 				local l = value["left"]
 				local r = value["right"]
 				local t = value["top"]
 				local b = value["bottom"]
+
 				WG.BattleRoomWindow.AddStartRect(index - 1, l, t, r, b)
 			end
 		end
@@ -588,9 +597,23 @@ end
 function OptionpresetsPanel.ShowModoptions()
 	-- getting the correct values
 	battleLobby = WG.LibLobby.localLobby
+	if battleLobby.name==nil or battleLobby.name ~= "singleplayer" then
+		-- defining for mp
+		Spring.Echo("----ts---t-----setting to multiplayer lobby ")
+		battleLobby = WG.LibLobby.lobby
+	end
+
+	battle = battleLobby:GetBattle(battleLobby:GetMyBattleID())
+	if not battle then
+		Spring.Echo("----ts---t-----setting to multiplayer lobby2 ")
+		battleLobby = WG.LibLobby.lobby
+		battle = battleLobby:GetBattle(battleLobby:GetMyBattleID())
+	end
+
+
 	localModoptions = Spring.Utilities.CopyTable(battleLobby:GetMyBattleModoptions() or {})
 	-- need to get the modoptions
-	battle = battleLobby:GetBattle(battleLobby:GetMyBattleID())
+	-- battle = battleLobby:GetBattle(battleLobby:GetMyBattleID())
 	if battle then
 		-- not available in mp
 		currentMap = battle.mapName
