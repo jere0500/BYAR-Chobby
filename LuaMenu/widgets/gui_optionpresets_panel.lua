@@ -19,6 +19,7 @@ local modoptionStructure = {}
 -- Variables
 local battleLobby
 local battle
+local multiplayer = false
 
 -- enabled options
 local enabledOptions = {}
@@ -35,6 +36,7 @@ local currentMap
 local currentAITable = {}
 local currentStartRects
 local currentStartPosType
+local currentMPBattleSettings = {}
 
 local window
 local OptionpresetsPanel = {}
@@ -279,6 +281,12 @@ local function overwritePreset(presetName)
 		jsondata[preset]["startPosType"] = currentStartPosType
 	end
 
+	if currentMPBattleSettings ~= nil then
+		if jsondata[preset]["MPBattleSettings"] == nil and enabledOptions["MPBattleSettings"] then
+			jsondata[preset]["MPBattleSettings"] = {}
+		end
+		jsondata[preset]["MPBattleSettings"] = currentMPBattleSettings
+	end
 
 
 	selectedPreset = preset
@@ -573,6 +581,7 @@ local function CreateOptionpresetWindow()
 	enabledOptions["ai"] = true
 	enabledOptions["startingRects"] = true
 	enabledOptions["startPosType"] = true
+	enabledOptions["MPBattleSettings"] = multiplayer
 	
 	-- to add a bit of offset
 	
@@ -597,17 +606,13 @@ end
 function OptionpresetsPanel.ShowModoptions()
 	-- getting the correct values
 	battleLobby = WG.LibLobby.localLobby
-	if battleLobby.name==nil or battleLobby.name ~= "singleplayer" then
-		-- defining for mp
-		Spring.Echo("----ts---t-----setting to multiplayer lobby ")
-		battleLobby = WG.LibLobby.lobby
-	end
 
 	battle = battleLobby:GetBattle(battleLobby:GetMyBattleID())
 	if not battle then
 		Spring.Echo("----ts---t-----setting to multiplayer lobby2 ")
 		battleLobby = WG.LibLobby.lobby
 		battle = battleLobby:GetBattle(battleLobby:GetMyBattleID())
+		multiplayer = true
 	end
 
 
@@ -643,6 +648,23 @@ function OptionpresetsPanel.ShowModoptions()
 	end
 
 	currentStartRects = WG.BattleRoomWindow.GetCurrentStartRects()
+
+
+	if multiplayer then
+		Spring.Echo("battleInfostuff......-------")
+		Spring.Echo(battle.locked)
+		Spring.Echo(battle.autoBalance)
+		Spring.Echo(battle.teamSize)
+		Spring.Echo(battle.nbTeams)
+		Spring.Echo(battle.balanceMode)
+		Spring.Echo(battle.preset)
+		currentMPBattleSettings["locked"] = battle.locked
+		currentMPBattleSettings["autoBalance"] = battle.autoBalance
+		currentMPBattleSettings["teamSize"] = battle.teamSize
+		currentMPBattleSettings["nbTeams"] = battle.nbTeams
+		currentMPBattleSettings["balanceMode"] = battle.balanceMode
+		currentMPBattleSettings["preset"] = battle.preset
+	end
 
 	-- testing removing teams 2
 	-- this works completly and delets also all the bots
