@@ -1254,6 +1254,9 @@ local function SetupInfoButtonsPanel(leftInfo, rightInfo, battle, battleID, myUs
 		-- cosmetics when disabled
 		btnModoptions.suppressButtonReaction = true
 		btnModoptions:SetEnabled(false)
+		-- preset loading is useless if modification of modoptions not allow
+		btnOptionPresets.suppressButtonReaction = true
+		btnOptionPresets:SetEnabled(false)
 	end
 
 	-- the modoptions panel needing a refresh is independant on if we have a modoptions panel from a diffrent version to fall back onto
@@ -1268,6 +1271,10 @@ local function SetupInfoButtonsPanel(leftInfo, rightInfo, battle, battleID, myUs
 				btnModoptions.tooltip = "Configure custom gameplay options"
 				btnModoptions:SetEnabled(true)
 				modoptionsLoaded = true
+
+				--enable also btnOptionPresets
+				btnOptionPresets.suppressButtonReaction = false
+				btnOptionPresets:SetEnabled(true)
 
 				local modoptionspanelExternalFunctions = WG.ModoptionsPanel.GetModoptionsControl()
 				modoptionspanelExternalFunctions:Update()
@@ -4249,6 +4256,15 @@ function BattleRoomWindow.RemoveStartRect(allyNo)
 		--problem: allyNo -> is used to clear all boxes
 		-- is even disallowed in the Current Context
 		-- battleLobby:SayBattle("!clearbox " .. allyNo)
+	end
+end
+
+
+function BattleRoomWindow.SetTeams(numberOfTeams)
+	if battleLobby.name == "singleplayer" then
+		-- command to set the teams
+	else
+		battleLobby:SayBattle(string.format("!nbteams %d", numberOfTeams))
 	end
 end
 

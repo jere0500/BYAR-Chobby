@@ -154,35 +154,27 @@ local function applyPreset(presetName)
 	--modoptions, ignore if nil
 	local presetObj = jsondata[presetName]
 	if presetObj ~= nil then
+		-- only apply in multiplayer
+		local presetMPBattleSettings = presetObj["MPBattleSettings"]
+		if presetMPBattleSettings ~= nil and multiplayer then
+			-- need to use the say function	
+			battleLobby:SayBattle("!preset "..presetMPBattleSettings["preset"])
+			if presetMPBattleSettings["locked"] then
+				battleLobby:SayBattle("!lock")
+			else
+				battleLobby:SayBattle("!unlock")
+			end
+			battleLobby:SayBattle("!autobalance "..presetMPBattleSettings["autoBalance"])
+			battleLobby:SayBattle("!balanceMode "..presetMPBattleSettings["balanceMode"])
+			battleLobby:SayBattle("!set teamSize "..presetMPBattleSettings["teamSize"])
+			battleLobby:SayBattle("!nbTeams "..presetMPBattleSettings["nbTeams"])
+		end
+
 		localModoptions = presetObj["modoptions"]
 		if (localModoptions ~= nil and enabledOptions["modoptions"]) then
 			battleLobby:SetModOptions(localModoptions)
 		end
-		local presetMapName = presetObj["map"]
-		if (presetMapName ~= nil and enabledOptions["map"]) then
-			-- selection 1
-			Spring.Echo("way 1")
-			battleLobby:SelectMap(presetMapName)
-			-- Spring.Echo("way 2")
-			-- WG.Chobby.localLobby:SelectMap(presetMapName)
-			-- Spring.Echo("way 3")
-			-- WG.LibLobby.lobby:SelectMap(presetMapName)
-		end
-		local presetRectangles = presetObj["startingRects"]
-		if (presetRectangles ~= nil and enabledOptions["startingRects"]) then
-			WG.BattleRoomWindow.RemoveStartRect()
-			-- local brStartRects = WG.BattleRoomWindow.GetCurrentStartRects2()
-			--
-			WG.BattleRoomWindow.SetTeams(#presetRectangles)
-			for index, value in ipairs(presetRectangles) do
-				local l = value["left"]
-				local r = value["right"]
-				local t = value["top"]
-				local b = value["bottom"]
 
-				WG.BattleRoomWindow.AddStartRect(index - 1, l, t, r, b)
-			end
-		end
 		local presetAi = presetObj["ai"]
 		if presetAi ~= nil and enabledOptions["ai"] then
 			local newAiNames = {}
@@ -204,26 +196,37 @@ local function applyPreset(presetName)
 			end
 		end
 
+		local presetMapName = presetObj["map"]
+		if (presetMapName ~= nil and enabledOptions["map"]) then
+			-- selection 1
+			Spring.Echo("way 1")
+			battleLobby:SelectMap(presetMapName)
+			-- Spring.Echo("way 2")
+			-- WG.Chobby.localLobby:SelectMap(presetMapName)
+			-- Spring.Echo("way 3")
+			-- WG.LibLobby.lobby:SelectMap(presetMapName)
+		end
+		local presetRectangles = presetObj["startingRects"]
+		if (presetRectangles ~= nil and enabledOptions["startingRects"]) then
+			WG.BattleRoomWindow.RemoveStartRect()
+			-- local brStartRects = WG.BattleRoomWindow.GetCurrentStartRects2()
+			-- 
+			-- WG.BattleRoomWindow.SetTeams(#presetRectangles)
+			for index, value in ipairs(presetRectangles) do
+				local l = value["left"]
+				local r = value["right"]
+				local t = value["top"]
+				local b = value["bottom"]
+
+				WG.BattleRoomWindow.AddStartRect(index - 1, l, t, r, b)
+			end
+		end
+
 		local startPosType = presetObj["startPosType"]
 		if startPosType ~= nil and enabledOptions["startPosType"] then
 			WG.BattleRoomWindow.SetBattleStartPosType(startPosType)
 		end
 
-		local presetMPBattleSettings = presetObj["MPBattleSettings"]
-		-- only apply in multiplayer
-		if presetMPBattleSettings ~= nil and multiplayer then
-			-- need to use the say function	
-			battleLobby:SayBattle("!set teamSize "..presetMPBattleSettings["teamSize"])
-			battleLobby:SayBattle("!nbTeams "..presetMPBattleSettings["nbTeams"])
-			battleLobby:SayBattle("!preset "..presetMPBattleSettings["preset"])
-			if presetMPBattleSettings["locked"] then
-				battleLobby:SayBattle("!lock")
-			else
-				battleLobby:SayBattle("!unlock")
-			end
-			battleLobby:SayBattle("!balanceMode "..presetMPBattleSettings["balanceMode"])
-			battleLobby:SayBattle("!autobalance "..presetMPBattleSettings["autoBalance"])
-		end
 			-- remove all ai, which are not part of the newAiNames
 			-- for _, oldname in pairs(currentAINames) do
 			-- 	Spring.Echo("oldname---------------")
