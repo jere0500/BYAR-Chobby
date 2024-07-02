@@ -55,7 +55,7 @@ if appliedPreset == nil then
 	selectedPreset = "defaultPreset";
 end
 
--- copied from gui_modoptions_panel: used for generate the 
+-- copied from gui_modoptions_panel: used for generate the
 local function ProcessBoolOption(name, active, index)
 	-- setting the label
 	local label = Label:New {
@@ -202,9 +202,27 @@ local function applyPreset(presetName)
 				battleLobby:AddAi(key, value.aiLib, value.allyNumber, value.aiVersion, value.aiOptions,
 					battlestatusoptions)
 			end
+		end
+
 		local startPosType = presetObj["startPosType"]
-		if startPosType~=nil and enabledOptions["startPosType"] then
+		if startPosType ~= nil and enabledOptions["startPosType"] then
 			WG.BattleRoomWindow.SetBattleStartPosType(startPosType)
+		end
+
+		local presetMPBattleSettings = presetObj["MPBattleSettings"]
+		-- only apply in multiplayer
+		if presetMPBattleSettings ~= nil and multiplayer then
+			-- need to use the say function	
+			battleLobby:SayBattle("!set teamSize "..presetMPBattleSettings["teamSize"])
+			battleLobby:SayBattle("!nbTeams "..presetMPBattleSettings["nbTeams"])
+			battleLobby:SayBattle("!preset "..presetMPBattleSettings["preset"])
+			if presetMPBattleSettings["locked"] then
+				battleLobby:SayBattle("!lock")
+			else
+				battleLobby:SayBattle("!unlock")
+			end
+			battleLobby:SayBattle("!balanceMode "..presetMPBattleSettings["balanceMode"])
+			battleLobby:SayBattle("!autobalance "..presetMPBattleSettings["autoBalance"])
 		end
 			-- remove all ai, which are not part of the newAiNames
 			-- for _, oldname in pairs(currentAINames) do
@@ -222,7 +240,6 @@ local function applyPreset(presetName)
 			-- 		battleLobby:RemoveAi(oldname)
 			-- 	end
 			-- end
-		end
 	end
 end
 
@@ -252,7 +269,7 @@ local function overwritePreset(presetName)
 		jsondata[preset]["modoptions"] = localModoptions
 	end
 
-	if currentMap ~= nil and enabledOptions["map"]then
+	if currentMap ~= nil and enabledOptions["map"] then
 		if jsondata[preset]["map"] == nil then
 			jsondata[preset]["map"] = {}
 		end
@@ -261,14 +278,14 @@ local function overwritePreset(presetName)
 
 
 	if currentAITable ~= nil then
-		if jsondata[preset]["ai"] and enabledOptions["ai"]== nil then
+		if jsondata[preset]["ai"] and enabledOptions["ai"] == nil then
 			jsondata[preset]["ai"] = {}
 		end
 		jsondata[preset]["ai"] = currentAITable
 	end
 
 	if currentStartRects ~= nil then
-		if jsondata[preset]["startingRects"] and enabledOptions["startingRects"]== nil then
+		if jsondata[preset]["startingRects"] and enabledOptions["startingRects"] == nil then
 			jsondata[preset]["startingRects"] = {}
 		end
 		jsondata[preset]["startingRects"] = currentStartRects
@@ -582,9 +599,9 @@ local function CreateOptionpresetWindow()
 	enabledOptions["startingRects"] = true
 	enabledOptions["startPosType"] = true
 	enabledOptions["MPBattleSettings"] = multiplayer
-	
+
 	-- to add a bit of offset
-	
+
 	local contentsPanel = ScrollPanel:New {
 		x = 5,
 		y = 130,
@@ -596,7 +613,7 @@ local function CreateOptionpresetWindow()
 	local counter = 0
 	for key, value in pairs(enabledOptions) do
 		contentsPanel:AddChild(ProcessBoolOption(key, value, counter))
-		counter=counter + 1
+		counter = counter + 1
 	end
 end
 
