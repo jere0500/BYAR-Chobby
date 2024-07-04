@@ -123,22 +123,43 @@ end
 
 
 local function refreshJSONData()
-	local modfile = io.open("modfile.json", 'r')
+	local modfile = io.open("optionsPresets.json", 'r')
 	if modfile ~= nil then
 		-- create file
-		jsondata = json.decode(modfile:read())
+		local boolOut
+		boolOut, jsondata = pcall(json.decode, modfile:read())
+		Spring.Echo("--after reading the data")
+		Spring.Echo(boolOut)
+		Spring.Echo(jsondata)
+		if not boolOut then
+			--error during file reading, should output read text TODO
+			-- move the file
+			--
+			modfile:close()
+			local localtime = os.date('%Y-%m-%d-%H:%M:%S')
+			local renamesuccess = os.rename("optionsPresets.json", "optionsPresetsError:"..localtime..".json")
+			Spring.Echo(renamesuccess)
+			if not renamesuccess then
+				Spring.Echo("fail during rename")
+				return
+			end
+			-- generate a new file
+			refreshJSONData()
+			return
+		end
 	end
-	if jsondata == nil then
+	if modfile == nil then
 		jsondata = {}
 		jsondata["defaultPreset"] = {}
-		modfile = io.open("modfile.json", 'w')
+		modfile = io.open("optionsPresets.json", 'w')
 		local jsonobj = json.encode(jsondata)
 		modfile:write(jsonobj)
 	end
+
 	modfile:close()
 end
 local function saveJSONData()
-	local modfile = io.open("modfile.json", 'w')
+	local modfile = io.open("optionsPresets.json", 'w')
 	if modfile == nil then
 		-- maybe some logging
 		return
