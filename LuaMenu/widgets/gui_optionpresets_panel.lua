@@ -307,7 +307,7 @@ local function PopulatePresetPanel(parentPanel)
 			name = "createNewPreset",
 			parent = parentPanel,
 			align = "center",
-			width = 500,
+			width = 450,
 			height = 200,
 			resizable = false,
 			draggable = false,
@@ -340,11 +340,19 @@ local function PopulatePresetPanel(parentPanel)
 			classname = "action_button",
 			OnClick = {
 				function()
-					local preset = "defaultPreset"
+					local presetName = "defaultPreset"
 					if (presetEditBox.text ~= nil) then
-						preset = presetEditBox.text
+						presetName = presetEditBox.text
 					end
-					writePreset(preset)
+
+					if presetName == "<new>" or presetName == "" then
+						refreshPresetMenu()
+						openPresetPopup:Dispose()
+						return
+					end
+					-- validate presetName
+
+					writePreset(presetName)
 					openPresetPopup:Dispose()
 				end
 			},
@@ -367,12 +375,6 @@ local function PopulatePresetPanel(parentPanel)
 			},
 		}
 
-		-- also need the disposing thign
-		-- local function CancelFunc()
-		-- 	openPresetPopup:Dispose()
-		-- end
-		--
-		-- WG.Chobby.PriorityPopup(openPresetPopup, CancelFunc, nil)
 	end
 
 	local presetNames = {}
@@ -453,6 +455,10 @@ local function PopulatePresetPanel(parentPanel)
 		classname = "action_button",
 		OnClick = {
 			function()
+				--verify deletable preset
+				if selectedPresetName == "" or selectedPresetName == "defaultPreset" or selectedPresetName == "defaultPreset" then
+					return
+				end
 				writePreset(selectedPresetName)
 				window:Dispose()
 				-- battleLobby:SetModOptions(localModoptions)
@@ -475,7 +481,12 @@ local function PopulatePresetPanel(parentPanel)
 		classname = "negative_button",
 		OnClick = {
 			function()
-				WG.Chobby.ConfirmationPopup(disableSelectedPreset, "This will delete the preset. Are you sure?", nil, 315,
+				--verify deletable preset
+				if selectedPresetName == "" or selectedPresetName == "defaultPreset" or selectedPresetName == "defaultPreset" then
+					return
+				end
+
+				WG.Chobby.ConfirmationPopup(disableSelectedPreset, "This will delete preset: \""..selectedPresetName.."\". Are you sure?", nil, 315,
 					170, i18n("yes"), i18n("cancel"))
 			end
 		},
@@ -515,9 +526,9 @@ local function CreateOptionpresetWindow()
 	-- add the tabs
 	local tabs = {}
 	tabs[1] = {
-		name = "tsneraio",
-		caption = "presets",
-		tooltip = nil,
+		name = "presets",
+		caption = "Presets",
+		tooltip = "manage presets",
 		objectOverrideFont = WG.Chobby.Configuration:GetFont(3),
 		children = { contentsPanel },
 		weight = 1,
@@ -537,8 +548,8 @@ local function CreateOptionpresetWindow()
 	}
 	tabs[2] = {
 		name = "options",
-		caption = "load options",
-		tooltip = nil,
+		caption = "Load Options",
+		tooltip = "specify which options will be loaded from/ saved to preset",
 		objectOverrideFont = WG.Chobby.Configuration:GetFont(3),
 		children = { optionpanel },
 		weight = 2,
