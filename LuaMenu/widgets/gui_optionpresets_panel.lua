@@ -22,6 +22,14 @@ local multiplayer = false
 
 -- enabled options
 local enabledOptions = {}
+local optionCaptions = {
+	["Modoptions"] = "settings part of the adv. options menu",
+	["Map"]="current selected map",
+	["Bots"]="all bots (settings, team)",
+	["Starting Areas"]="all start areas with position",
+	["Starting Position Types"]="(singleplayer, debug mode) type of start positions",
+	["Multiplayer Battle Settings"]="multiplayer specific settings (battle preset, #teams, ...)"
+}
 
 -- edited by the preset
 local currentModoptions = {}
@@ -100,7 +108,7 @@ local function applyPreset(presetName)
 	local presetObj = jsondata[presetName]
 	if presetObj ~= nil then
 		-- only apply in multiplayer
-		local presetMPBattleSettings = presetObj["MPBattleSettings"]
+		local presetMPBattleSettings = presetObj["Multiplayer Battle Settings"]
 		if presetMPBattleSettings ~= nil and multiplayer then
 			battleLobby:SayBattle("!preset " .. presetMPBattleSettings["preset"])
 			if presetMPBattleSettings["locked"] then
@@ -115,14 +123,14 @@ local function applyPreset(presetName)
 		end
 
 		-- modoptions
-		currentModoptions = presetObj["modoptions"]
-		if (currentModoptions ~= nil and enabledOptions["modoptions"]) then
+		currentModoptions = presetObj["Modoptions"]
+		if (currentModoptions ~= nil and enabledOptions["Modoptions"]) then
 			battleLobby:SetModOptions(currentModoptions)
 		end
 
 		-- AIs with their settings
-		local presetAi = presetObj["ai"]
-		if presetAi ~= nil and enabledOptions["ai"] then
+		local presetAi = presetObj["Bots"]
+		if presetAi ~= nil and enabledOptions["Bots"] then
 			local newAiNames = {}
 
 			for key, _ in pairs(currentAITable) do
@@ -140,14 +148,14 @@ local function applyPreset(presetName)
 		end
 
 		-- map
-		local presetMapName = presetObj["map"]
-		if (presetMapName ~= nil and enabledOptions["map"]) then
+		local presetMapName = presetObj["Map"]
+		if (presetMapName ~= nil and enabledOptions["Map"]) then
 			battleLobby:SelectMap(presetMapName)
 		end
 
 		-- starting Areas
-		local presetRectangles = presetObj["startingRects"]
-		if (presetRectangles ~= nil and enabledOptions["startingRects"]) then
+		local presetRectangles = presetObj["Starting Areas"]
+		if (presetRectangles ~= nil and enabledOptions["Starting Areas"]) then
 			WG.BattleRoomWindow.RemoveStartRect()
 			for index, value in ipairs(presetRectangles) do
 				local l = value["left"]
@@ -159,8 +167,8 @@ local function applyPreset(presetName)
 			end
 		end
 
-		local startPosType = presetObj["startPosType"]
-		if startPosType ~= nil and enabledOptions["startPosType"] then
+		local startPosType = presetObj["Starting Position Types"]
+		if startPosType ~= nil and enabledOptions["Starting Position Types"] then
 			WG.BattleRoomWindow.SetBattleStartPosType(startPosType)
 		end
 	end
@@ -187,47 +195,47 @@ local function writePreset(presetName)
 		jsondata[preset] = {}
 	end
 
-	if currentModoptions ~= nil and enabledOptions["modoptions"] then
-		if jsondata[preset]["modoptions"] == nil then
-			jsondata[preset]["modoptions"] = {}
+	if currentModoptions ~= nil and enabledOptions["Modoptions"] then
+		if jsondata[preset]["Modoptions"] == nil then
+			jsondata[preset]["Modoptions"] = {}
 		end
-		jsondata[preset]["modoptions"] = currentModoptions
+		jsondata[preset]["Modoptions"] = currentModoptions
 	end
 
-	if currentMap ~= nil and enabledOptions["map"] then
-		if jsondata[preset]["map"] == nil then
-			jsondata[preset]["map"] = {}
+	if currentMap ~= nil and enabledOptions["Map"] then
+		if jsondata[preset]["Map"] == nil then
+			jsondata[preset]["Map"] = {}
 		end
-		jsondata[preset]["map"] = currentMap
+		jsondata[preset]["Map"] = currentMap
 	end
 
 
 	if currentAITable ~= nil then
-		if jsondata[preset]["ai"] and enabledOptions["ai"] == nil then
-			jsondata[preset]["ai"] = {}
+		if jsondata[preset]["Bots"] and enabledOptions["ai"] == nil then
+			jsondata[preset]["Bots"] = {}
 		end
-		jsondata[preset]["ai"] = currentAITable
+		jsondata[preset]["Bots"] = currentAITable
 	end
 
 	if currentStartRects ~= nil then
-		if jsondata[preset]["startingRects"] and enabledOptions["startingRects"] == nil then
-			jsondata[preset]["startingRects"] = {}
+		if jsondata[preset]["Starting Areas"] and enabledOptions["startingRects"] == nil then
+			jsondata[preset]["Starting Areas"] = {}
 		end
-		jsondata[preset]["startingRects"] = currentStartRects
+		jsondata[preset]["Starting Areas"] = currentStartRects
 	end
 
 	if currentStartPosType ~= nil then
-		if jsondata[preset]["startPosType"] == nil and enabledOptions["startPosType"] then
-			jsondata[preset]["startPosType"] = {}
+		if jsondata[preset]["Starting Position Types"] == nil and enabledOptions["startPosType"] then
+			jsondata[preset]["Starting Position Types"] = {}
 		end
-		jsondata[preset]["startPosType"] = currentStartPosType
+		jsondata[preset]["Starting Position Types"] = currentStartPosType
 	end
 
 	if currentMPBattleSettings ~= nil then
-		if jsondata[preset]["MPBattleSettings"] == nil and enabledOptions["MPBattleSettings"] then
-			jsondata[preset]["MPBattleSettings"] = {}
+		if jsondata[preset]["Multiplayer Battle Settings"] == nil and enabledOptions["MPBattleSettings"] then
+			jsondata[preset]["Multiplayer Battle Settings"] = {}
 		end
-		jsondata[preset]["MPBattleSettings"] = currentMPBattleSettings
+		jsondata[preset]["Multiplayer Battle Settings"] = currentMPBattleSettings
 	end
 
 	-- selects to apply preset
@@ -250,6 +258,7 @@ local function ProcessBoolOption(name, active, index)
 		height = 30,
 		valign = "center",
 		align = "left",
+		tooltip = optionCaptions[name], --data.name,
 		caption = name,
 		objectOverrideFont = WG.Chobby.Configuration:GetFont(2),
 	}
@@ -261,7 +270,8 @@ local function ProcessBoolOption(name, active, index)
 		height = 30,
 		boxalign = "left",
 		boxsize = 25,
-		caption = "", --data.name,
+		caption = "",
+		tooltip = optionCaptions[name], --data.name,
 		checked = active,
 		objectOverrideFont = WG.Chobby.Configuration:GetFont(2),
 
@@ -534,14 +544,6 @@ local function CreateOptionpresetWindow()
 		weight = 2,
 	}
 
-	Spring.Echo("-----tabvals-----")
-	Spring.Echo(tabs[#tabs].name)
-	Spring.Echo(tabs[#tabs].caption)
-	Spring.Echo(tabs[#tabs].tooltip)
-	Spring.Echo(tabs[#tabs].objectOverrideFont)
-	Spring.Echo(tabs[#tabs].children)
-	Spring.Echo(tabs[#tabs].weight)
-
 	-- initiate the tab layout
 	local tabPanel = Chili.DetachableTabPanel:New {
 		x = 4,
@@ -549,7 +551,7 @@ local function CreateOptionpresetWindow()
 		y = 49,
 		bottom = 75,
 		padding = { 0, 0, 0, 0 },
-		minTabWidth = 220,
+		minTabWidth = 210,
 		tabs = tabs,
 		parent = optionpresetWindow,
 		OnTabChange = {
@@ -624,12 +626,14 @@ local function CreateOptionpresetWindow()
 	-- adding the enabled/ disabled options
 	-- preparing the array
 	-- first all should be enabled, keys are the same as in the localjson
-	enabledOptions["modoptions"] = true
-	enabledOptions["map"] = true
-	enabledOptions["ai"] = true
-	enabledOptions["startingRects"] = true
-	enabledOptions["startPosType"] = true
-	enabledOptions["MPBattleSettings"] = multiplayer
+	enabledOptions["Bots"] = true
+	enabledOptions["Map"] = true
+	enabledOptions["Modoptions"] = true
+	enabledOptions["Starting Areas"] = true
+	enabledOptions["Starting Position Types"] = true
+	if multiplayer then
+		enabledOptions["Multiplayer Battle Settings"] = multiplayer
+	end
 
 	-- to add a bit of offset
 	--
