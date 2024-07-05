@@ -12,23 +12,16 @@ end
 
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
--- Structure
-local modoptionDefaults = {}
-local modoptionStructure = {}
 
 -- Variables
 local battleLobby
 local battle
+local OptionpresetsPanel = {}
+local window
 local multiplayer = false
 
 -- enabled options
 local enabledOptions = {}
-local function printEnabledOptions()
-	Spring.Echo("print enabled options----------------")
-	for key, value in pairs(enabledOptions) do
-		Spring.Echo(tostring(key) .. tostring(value))
-	end
-end
 
 -- edited by the preset
 local currentModoptions = {}
@@ -38,107 +31,35 @@ local currentStartRects
 local currentStartPosType
 local currentMPBattleSettings = {}
 
-local window
-local OptionpresetsPanel = {}
-
-
-local appliedPreset
 -- now we need to store the object in this class
 local jsondata;
-local selectedPreset
 
+-- preset that is selected in the dropdown menu
+local selectedPresetName = "defaultPreset";
 
-local localModoptions = {}
+-- preset that is currently applied
+local appliedPresetName = "defaultPreset";
 
-if appliedPreset == nil then
-	appliedPreset = "defaultPreset";
-	selectedPreset = "defaultPreset";
-end
-
--- copied from gui_modoptions_panel: used for generate the
-local function ProcessBoolOption(name, active, index)
-	-- setting the label
-	local label = Label:New {
-		x = 35,
-		y = 0,
-		width = 1200,
-		height = 30,
-		valign = "center",
-		align = "left",
-		caption = name,
-		objectOverrideFont = WG.Chobby.Configuration:GetFont(2),
-	}
-
-	-- local oldText = localModoptions[data.key] or modoptionDefaults[data.key]
-
-	-- check if the option should be ticked or not
-	-- local checked = false
-	-- if localModoptions[data.key] == nil then
-	-- 	if modoptionDefaults[data.key] == "1" then
-	-- 		checked = true
-	-- 	end
-	-- elseif localModoptions[data.key] == "1" then
-	-- 	checked = true
-	-- end
-
-	local checkBox = Checkbox:New {
-		x = 5,
-		y = 0,
-		width = 30,
-		height = 30,
-		boxalign = "left",
-		boxsize = 25,
-		caption = "", --data.name,
-		checked = active,
-		objectOverrideFont = WG.Chobby.Configuration:GetFont(2),
-
-		OnChange = {
-			function(obj, newState)
-				enabledOptions[name] = ((newState and true) or false)
-				printEnabledOptions()
-			end
-		},
-	}
-	-- modoptionControlNames[data.key] = checkBox
-
-	return Control:New {
-		x = 0,
-		y = index * 32,
-		width = 1600,
-		height = 32,
-		padding = { 0, 0, 0, 0 },
-		children = {
-			label,
-			checkBox
-		}
-	}
-
-	--return checkBox
-end
-
-
+-- defining function to later overwrite
 local refreshPresetMenu = function()
 end
 
 
-
+--------------------------------------------------------------------------------
+--- Helper functions
+--------------------------------------------------------------------------------
 local function refreshJSONData()
 	local modfile = io.open("optionsPresets.json", 'r')
 	if modfile ~= nil then
-		-- create file
 		local boolOut
 		boolOut, jsondata = pcall(json.decode, modfile:read())
-		Spring.Echo("--after reading the data")
-		Spring.Echo(boolOut)
-		Spring.Echo(jsondata)
+
+		-- handles broken json file
 		if not boolOut then
 			--error during file reading, should output read text TODO
-			-- move the file
-			--
 			modfile:close()
 			local localtime = os.date('%Y-%m-%d-%H:%M:%S')
 			local renamesuccess = os.rename("optionsPresets.json", "optionsPresetsError:"..localtime..".json")
-			Spring.Echo(renamesuccess)
 			if not renamesuccess then
 				Spring.Echo("fail during rename")
 				return
@@ -149,6 +70,7 @@ local function refreshJSONData()
 		end
 	end
 	if modfile == nil then
+		-- creates file when it does not exist
 		jsondata = {}
 		jsondata["defaultPreset"] = {}
 		modfile = io.open("optionsPresets.json", 'w')
@@ -158,6 +80,8 @@ local function refreshJSONData()
 
 	modfile:close()
 end
+
+-- writes preset changes to file
 local function saveJSONData()
 	local modfile = io.open("optionsPresets.json", 'w')
 	if modfile == nil then
@@ -169,16 +93,16 @@ local function saveJSONData()
 	modfile:close()
 end
 
+-- apply specific preset to the current Lobby
 local function applyPreset(presetName)
-	appliedPreset = presetName
+	appliedPresetName = presetName
 
-	--modoptions, ignore if nil
 	local presetObj = jsondata[presetName]
 	if presetObj ~= nil then
+
 		-- only apply in multiplayer
 		local presetMPBattleSettings = presetObj["MPBattleSettings"]
 		if presetMPBattleSettings ~= nil and multiplayer then
-			-- need to use the say function	
 			battleLobby:SayBattle("!preset "..presetMPBattleSettings["preset"])
 			if presetMPBattleSettings["locked"] then
 				battleLobby:SayBattle("!lock")
@@ -191,19 +115,18 @@ local function applyPreset(presetName)
 			battleLobby:SayBattle("!nbTeams "..presetMPBattleSettings["nbTeams"])
 		end
 
-		localModoptions = presetObj["modoptions"]
-		if (localModoptions ~= nil and enabledOptions["modoptions"]) then
-			battleLobby:SetModOptions(localModoptions)
+		-- modoptions
+		currentModoptions = presetObj["modoptions"]
+		if (currentModoptions ~= nil and enabledOptions["modoptions"]) then
+			battleLobby:SetModOptions(currentModoptions)
 		end
 
+		-- AIs with their settings
 		local presetAi = presetObj["ai"]
 		if presetAi ~= nil and enabledOptions["ai"] then
 			local newAiNames = {}
 
-			Spring.Echo(#currentAITable)
 			for key, _ in pairs(currentAITable) do
-				Spring.Echo("currentAITable-----")
-				Spring.Echo(key)
 				battleLobby:RemoveAi(key)
 			end
 			currentAITable = {}
@@ -217,22 +140,16 @@ local function applyPreset(presetName)
 			end
 		end
 
+		-- map 
 		local presetMapName = presetObj["map"]
 		if (presetMapName ~= nil and enabledOptions["map"]) then
-			-- selection 1
-			Spring.Echo("way 1")
 			battleLobby:SelectMap(presetMapName)
-			-- Spring.Echo("way 2")
-			-- WG.Chobby.localLobby:SelectMap(presetMapName)
-			-- Spring.Echo("way 3")
-			-- WG.LibLobby.lobby:SelectMap(presetMapName)
 		end
+
+		-- starting Areas
 		local presetRectangles = presetObj["startingRects"]
 		if (presetRectangles ~= nil and enabledOptions["startingRects"]) then
 			WG.BattleRoomWindow.RemoveStartRect()
-			-- local brStartRects = WG.BattleRoomWindow.GetCurrentStartRects2()
-			-- 
-			-- WG.BattleRoomWindow.SetTeams(#presetRectangles)
 			for index, value in ipairs(presetRectangles) do
 				local l = value["left"]
 				local r = value["right"]
@@ -248,25 +165,10 @@ local function applyPreset(presetName)
 			WG.BattleRoomWindow.SetBattleStartPosType(startPosType)
 		end
 
-			-- remove all ai, which are not part of the newAiNames
-			-- for _, oldname in pairs(currentAINames) do
-			-- 	Spring.Echo("oldname---------------")
-			-- 	Spring.Echo(oldname)
-			-- 	local found = false
-			-- 	for _, newName in pairs(newAiNames) do
-			-- 		if oldname == newName then
-			-- 			found = true
-			-- 			Spring.Echo(newName)
-			-- 		end
-			-- 	end
-			-- 	if not found then
-			-- 		Spring.Echo("removing oldname----------")
-			-- 		battleLobby:RemoveAi(oldname)
-			-- 	end
-			-- end
 	end
 end
 
+-- deletes a preset by name
 local function deletePreset(presetName)
 	if presetName ~= "defaultPreset" then
 		jsondata[presetName] = nil
@@ -275,8 +177,9 @@ local function deletePreset(presetName)
 	end
 end
 
--- also creates new Presets
-local function overwritePreset(presetName)
+-- applies changes to specified preset
+-- (creates new preset if none with that name exists)
+local function writePreset(presetName)
 	local preset = presetName
 	if (presetName == nil) then
 		preset = "defaultPreset"
@@ -286,11 +189,11 @@ local function overwritePreset(presetName)
 		jsondata[preset] = {}
 	end
 
-	if localModoptions ~= nil and enabledOptions["modoptions"] then
+	if currentModoptions ~= nil and enabledOptions["modoptions"] then
 		if jsondata[preset]["modoptions"] == nil then
 			jsondata[preset]["modoptions"] = {}
 		end
-		jsondata[preset]["modoptions"] = localModoptions
+		jsondata[preset]["modoptions"] = currentModoptions
 	end
 
 	if currentMap ~= nil and enabledOptions["map"] then
@@ -329,15 +232,64 @@ local function overwritePreset(presetName)
 		jsondata[preset]["MPBattleSettings"] = currentMPBattleSettings
 	end
 
-
-	selectedPreset = preset
+	-- selects to apply preset
+	selectedPresetName = preset
 
 	saveJSONData()
 	refreshPresetMenu()
 end
 
-local function PopulatePresetTab()
-	-- initial population
+--------------------------------------------------------------------------------
+--- Gui functions
+--------------------------------------------------------------------------------
+
+-- generate checkbox panel for disabling/ enabling loading
+local function ProcessBoolOption(name, active, index)
+	local label = Label:New {
+		x = 35,
+		y = 0,
+		width = 1200,
+		height = 30,
+		valign = "center",
+		align = "left",
+		caption = name,
+		objectOverrideFont = WG.Chobby.Configuration:GetFont(2),
+	}
+
+	local checkBox = Checkbox:New {
+		x = 5,
+		y = 0,
+		width = 30,
+		height = 30,
+		boxalign = "left",
+		boxsize = 25,
+		caption = "", --data.name,
+		checked = active,
+		objectOverrideFont = WG.Chobby.Configuration:GetFont(2),
+
+		OnChange = {
+			function(_, newState)
+				enabledOptions[name] = ((newState and true) or false)
+			end
+		},
+	}
+
+	return Control:New {
+		x = 0,
+		y = index * 32,
+		width = 1600,
+		height = 32,
+		padding = { 0, 0, 0, 0 },
+		children = {
+			label,
+			checkBox
+		}
+	}
+end
+
+-- generates the view for the preset selection panel 
+local function PopulatePresetPanel()
+	-- reading the default Preset options from the json data
 	refreshJSONData()
 
 	-- parent panel
@@ -350,7 +302,7 @@ local function PopulatePresetTab()
 		horizontalScrollbar = false,
 	}
 
-
+	-- popup for entering a new preset Name
 	local function OpenPresetPopup()
 		local openPresetPopup = Window:New {
 			caption = "Create new preset",
@@ -376,14 +328,9 @@ local function PopulatePresetTab()
 			objectOverrideFont     = WG.Chobby.Configuration:GetFont(2),
 			objectOverrideHintFont = WG.Chobby.Configuration:GetFont(11),
 			tooltip                = "enter a name for your preset",
-			OnFocusUpdate          = {
-				-- function(obj)
-				-- 	Spring.Echo("updated")
-				-- end
-			}
 		}
 
-		local buttonSave = Button:New {
+		Button:New {
 			x = 10,
 			width = 135,
 			y = 50,
@@ -398,17 +345,13 @@ local function PopulatePresetTab()
 					if (presetEditBox.text ~= nil) then
 						preset = presetEditBox.text
 					end
-					overwritePreset(preset)
+					writePreset(preset)
 					openPresetPopup:Dispose()
-					-- if not json then
-					--
-					-- 	VFS.Include(LIB_LOBBY_DIRNAME .. "json.lua")
-					-- end
-					-- this only adds all options, which are different from the defaults
 				end
 			},
 		}
-		local buttonAbort = Button:New {
+
+		Button:New {
 			x = 145,
 			width = 135,
 			y = 50,
@@ -426,17 +369,17 @@ local function PopulatePresetTab()
 		}
 	end
 
-	-- needs to get repopulated, when creating a new preset
 	local presetNames = {}
 	local presetList = {}
+	-- (re)generates the dropdown list of presets
 	refreshPresetMenu = function()
 		presetNames = {}
-		if jsondata[selectedPreset] == nil then
-			selectedPreset = "defaultPreset"
+		if jsondata[selectedPresetName] == nil then
+			selectedPresetName = "defaultPreset"
 		end
 
 		table.sort(jsondata)
-		table.insert(presetNames, selectedPreset)
+		table.insert(presetNames, selectedPresetName)
 		table.insert(presetNames, "<new>")
 		local jsonNames = {}
 		for key, _ in pairs(jsondata) do
@@ -444,7 +387,7 @@ local function PopulatePresetTab()
 		end
 		table.sort(jsonNames)
 		for _, value in pairs(jsonNames) do
-			if (value ~= selectedPreset) then
+			if (value ~= selectedPresetName) then
 				table.insert(presetNames, value)
 			end
 		end
@@ -461,30 +404,23 @@ local function PopulatePresetTab()
 			objectOverrideFont = WG.Chobby.Configuration:GetFont(2),
 			items = presetNames,
 			selectByName = true,
-			selected = selectedPreset,
+			selected = selectedPresetName,
 			OnSelectName = {
 				function(obj, selectedName)
 					if (selectedName == "<new>") then
 						-- handle creation of the popup
 						OpenPresetPopup()
-						presetList.selected = appliedPreset
-						selectedPreset = appliedPreset
-						-- open the popup
+						presetList.selected = appliedPresetName
+						selectedPresetName = appliedPresetName
 					else
-						selectedPreset = selectedName
+						selectedPresetName = selectedName
 					end
 				end
 			},
-			itemKeyToName = presetNames, -- Not a chili key
-			-- tooltip = data.desc,
+			itemKeyToName = presetNames,
 		}
 		contentsPanel:AddChild(presetList)
 	end
-
-
-
-
-
 
 	local buttonLoad = Button:New {
 		x = 155,
@@ -496,7 +432,7 @@ local function PopulatePresetTab()
 		classname = "action_button",
 		OnClick = {
 			function()
-				applyPreset(selectedPreset)
+				applyPreset(selectedPresetName)
 				window:Dispose()
 			end
 		},
@@ -512,7 +448,7 @@ local function PopulatePresetTab()
 		classname = "action_button",
 		OnClick = {
 			function()
-				overwritePreset(selectedPreset)
+				writePreset(selectedPresetName)
 				window:Dispose()
 				-- battleLobby:SetModOptions(localModoptions)
 			end
@@ -530,20 +466,13 @@ local function PopulatePresetTab()
 		classname = "negative_button",
 		OnClick = {
 			function()
-				deletePreset(selectedPreset)
+				deletePreset(selectedPresetName)
 			end
 		},
 	}
 
-
-
-
-
-
 	refreshPresetMenu()
 
-	-- contentsPanel:AddChild(presetEditBox)
-	-- contentsPanel:AddChild(buttonSave)
 	contentsPanel:AddChild(buttonLoad)
 	contentsPanel:AddChild(buttonDelete)
 	contentsPanel:AddChild(buttonSave)
@@ -584,8 +513,6 @@ local function CreateOptionpresetWindow()
 		},
 	}
 
-	-- local popupHolder = WG.Chobby.PriorityPopup(modoptionsSelectionWindow, CancelFunc, AcceptFunc)
-
 	WG.Chobby.lobbyInterfaceHolder.OnResize = WG.Chobby.lobbyInterfaceHolder.OnResize or {}
 	WG.Chobby.lobbyInterfaceHolder.OnResize[#WG.Chobby.lobbyInterfaceHolder.OnResize + 1] = function()
 		local ww, wh = Spring.GetWindowGeometry()
@@ -610,9 +537,7 @@ local function CreateOptionpresetWindow()
 
 	local popupHolder = WG.Chobby.PriorityPopup(optionpresetWindow, CancelFunc, nil)
 	window = optionpresetWindow
-	-- window:AddChild(PopulatePresetTab())
-	PopulatePresetTab()
-
+	PopulatePresetPanel()
 
 	-- adding the enabled/ disabled options
 	-- preparing the array
@@ -641,30 +566,24 @@ local function CreateOptionpresetWindow()
 	end
 end
 
-
-
-
-function OptionpresetsPanel.ShowModoptions()
-	-- getting the correct values
+-- external function to open the preset Panel
+function OptionpresetsPanel.ShowPresetPanel()
 	battleLobby = WG.LibLobby.localLobby
-
 	battle = battleLobby:GetBattle(battleLobby:GetMyBattleID())
+
+	-- multiplayer case, battle/ lobby are the WG.LibLobby.lobby
 	if not battle then
-		Spring.Echo("----ts---t-----setting to multiplayer lobby2 ")
 		battleLobby = WG.LibLobby.lobby
 		battle = battleLobby:GetBattle(battleLobby:GetMyBattleID())
 		multiplayer = true
 	end
 
+	-- copy all options from the battle/ lobby for managing:
 
-	localModoptions = Spring.Utilities.CopyTable(battleLobby:GetMyBattleModoptions() or {})
-	-- need to get the modoptions
-	-- battle = battleLobby:GetBattle(battleLobby:GetMyBattleID())
+	currentModoptions = Spring.Utilities.CopyTable(battleLobby:GetMyBattleModoptions() or {})
+
 	if battle then
-		-- not available in mp
 		currentMap = battle.mapName
-
-		-- get the currentStartPos type
 		currentStartPosType = battle.startPosType
 	else
 		Spring.Echo("No battle found")
@@ -672,33 +591,18 @@ function OptionpresetsPanel.ShowModoptions()
 
 
 	local currentAINames = battleLobby.battleAis
-	Spring.Echo("currentAIName ------------23----------")
-	Spring.Echo(#currentAINames)
-	-- local otherLobby = WG.Chobby.localLobby
-	-- local otherLobby2 = WG.LibLobby.lobby
-	-- Spring.Echo(currentAINames)
 	currentAITable = {}
 	for _, value in pairs(currentAINames) do
-		-- Spring.Echo(value)
 		local aiStatus = battleLobby:GetUserBattleStatus(value)
 		if (aiStatus ~= nil) then
 			currentAITable[value] = aiStatus
-		else
-			Spring.Echo("skipped because of null")
 		end
 	end
 
 	currentStartRects = WG.BattleRoomWindow.GetCurrentStartRects()
 
-
+	-- multiplayer specific options
 	if multiplayer then
-		Spring.Echo("battleInfostuff......-------")
-		Spring.Echo(battle.locked)
-		Spring.Echo(battle.autoBalance)
-		Spring.Echo(battle.teamSize)
-		Spring.Echo(battle.nbTeams)
-		Spring.Echo(battle.balanceMode)
-		Spring.Echo(battle.preset)
 		currentMPBattleSettings["locked"] = battle.locked
 		currentMPBattleSettings["autoBalance"] = battle.autoBalance
 		currentMPBattleSettings["teamSize"] = battle.teamSize
@@ -707,18 +611,10 @@ function OptionpresetsPanel.ShowModoptions()
 		currentMPBattleSettings["preset"] = battle.preset
 	end
 
-	-- testing removing teams 2
-	-- this works completly and delets also all the bots
-	-- local playerHandler = WG.BattleRoomWindow.GetPlayerHandler()
-	-- Spring.Echo(playerHandler)
-	-- local team = playerHandler.GetTeam(2)
-	-- Spring.Echo(team)
-	-- team = playerHandler.GetTeam(0).RemoveTeam()
-	-- Spring.Echo(team)
-
 	CreateOptionpresetWindow()
 end
 
+-- make the widget accessible from the preset Panel
 function widget:Initialize()
 	CHOBBY_DIR = LUA_DIRNAME .. "widgets/chobby/"
 	VFS.Include(LUA_DIRNAME .. "widgets/chobby/headers/exports.lua", nil, VFS.RAW_FIRST)

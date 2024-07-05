@@ -1242,7 +1242,7 @@ local function SetupInfoButtonsPanel(leftInfo, rightInfo, battle, battleID, myUs
 		tooltip = tooltip,
 		OnClick = {
 			function()
-				WG.OptionpresetsPanel.ShowModoptions()
+				WG.OptionpresetsPanel.ShowPresetPanel()
 			end
 		},
 		parent = leftInfo,
