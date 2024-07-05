@@ -1274,6 +1274,7 @@ local function SetupInfoButtonsPanel(leftInfo, rightInfo, battle, battleID, myUs
 
 				--enable also btnOptionPresets
 				btnOptionPresets.suppressButtonReaction = false
+				btnOptionPresets.tooltip = "Create and Load Presets for gameplay options"
 				btnOptionPresets:SetEnabled(true)
 
 				local modoptionspanelExternalFunctions = WG.ModoptionsPanel.GetModoptionsControl()

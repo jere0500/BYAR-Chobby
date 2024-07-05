@@ -59,7 +59,7 @@ local function refreshJSONData()
 			--error during file reading, should output read text TODO
 			modfile:close()
 			local localtime = os.date('%Y-%m-%d-%H:%M:%S')
-			local renamesuccess = os.rename("optionsPresets.json", "optionsPresetsError:"..localtime..".json")
+			local renamesuccess = os.rename("optionsPresets.json", "optionsPresetsError:" .. localtime .. ".json")
 			if not renamesuccess then
 				Spring.Echo("fail during rename")
 				return
@@ -99,20 +99,19 @@ local function applyPreset(presetName)
 
 	local presetObj = jsondata[presetName]
 	if presetObj ~= nil then
-
 		-- only apply in multiplayer
 		local presetMPBattleSettings = presetObj["MPBattleSettings"]
 		if presetMPBattleSettings ~= nil and multiplayer then
-			battleLobby:SayBattle("!preset "..presetMPBattleSettings["preset"])
+			battleLobby:SayBattle("!preset " .. presetMPBattleSettings["preset"])
 			if presetMPBattleSettings["locked"] then
 				battleLobby:SayBattle("!lock")
 			else
 				battleLobby:SayBattle("!unlock")
 			end
-			battleLobby:SayBattle("!autobalance "..presetMPBattleSettings["autoBalance"])
-			battleLobby:SayBattle("!balanceMode "..presetMPBattleSettings["balanceMode"])
-			battleLobby:SayBattle("!set teamSize "..presetMPBattleSettings["teamSize"])
-			battleLobby:SayBattle("!nbTeams "..presetMPBattleSettings["nbTeams"])
+			battleLobby:SayBattle("!autobalance " .. presetMPBattleSettings["autoBalance"])
+			battleLobby:SayBattle("!balanceMode " .. presetMPBattleSettings["balanceMode"])
+			battleLobby:SayBattle("!set teamSize " .. presetMPBattleSettings["teamSize"])
+			battleLobby:SayBattle("!nbTeams " .. presetMPBattleSettings["nbTeams"])
 		end
 
 		-- modoptions
@@ -140,7 +139,7 @@ local function applyPreset(presetName)
 			end
 		end
 
-		-- map 
+		-- map
 		local presetMapName = presetObj["map"]
 		if (presetMapName ~= nil and enabledOptions["map"]) then
 			battleLobby:SelectMap(presetMapName)
@@ -164,7 +163,6 @@ local function applyPreset(presetName)
 		if startPosType ~= nil and enabledOptions["startPosType"] then
 			WG.BattleRoomWindow.SetBattleStartPosType(startPosType)
 		end
-
 	end
 end
 
@@ -287,27 +285,17 @@ local function ProcessBoolOption(name, active, index)
 	}
 end
 
--- generates the view for the preset selection panel 
-local function PopulatePresetPanel()
+-- generates the view for the preset selection panel
+local function PopulatePresetPanel(parentPanel)
 	-- reading the default Preset options from the json data
 	refreshJSONData()
-
-	-- parent panel
-	local contentsPanel = ScrollPanel:New {
-		x = 6,
-		right = 5,
-		y = 10,
-		bottom = 8,
-		parent = window,
-		horizontalScrollbar = false,
-	}
 
 	-- popup for entering a new preset Name
 	local function OpenPresetPopup()
 		local openPresetPopup = Window:New {
 			caption = "Create new preset",
 			name = "createNewPreset",
-			parent = contentsPanel,
+			parent = parentPanel,
 			align = "center",
 			width = 500,
 			height = 200,
@@ -320,6 +308,7 @@ local function PopulatePresetPanel()
 			x                      = 10,
 			y                      = 10,
 			width                  = 300,
+			right                  = 10,
 			height                 = 30,
 			text                   = "",
 			useIME                 = false,
@@ -327,7 +316,7 @@ local function PopulatePresetPanel()
 			parent                 = openPresetPopup,
 			objectOverrideFont     = WG.Chobby.Configuration:GetFont(2),
 			objectOverrideHintFont = WG.Chobby.Configuration:GetFont(11),
-			tooltip                = "enter a name for your preset",
+			tooltip                = "enter a name for your new preset",
 		}
 
 		Button:New {
@@ -335,7 +324,7 @@ local function PopulatePresetPanel()
 			width = 135,
 			y = 50,
 			height = 70,
-			caption = "Save Preset",
+			caption = "Save",
 			parent = openPresetPopup,
 			objectOverrideFont = WG.Chobby.Configuration:GetFont(3),
 			classname = "action_button",
@@ -352,11 +341,11 @@ local function PopulatePresetPanel()
 		}
 
 		Button:New {
-			x = 145,
+			x = 155,
 			width = 135,
 			y = 50,
 			height = 70,
-			caption = "Abort",
+			caption = "Cancel",
 			parent = openPresetPopup,
 			objectOverrideFont = WG.Chobby.Configuration:GetFont(3),
 			classname = "negative_button",
@@ -367,6 +356,13 @@ local function PopulatePresetPanel()
 				end
 			},
 		}
+
+		-- also need the disposing thign
+		-- local function CancelFunc()
+		-- 	openPresetPopup:Dispose()
+		-- end
+		--
+		-- WG.Chobby.PriorityPopup(openPresetPopup, CancelFunc, nil)
 	end
 
 	local presetNames = {}
@@ -393,11 +389,11 @@ local function PopulatePresetPanel()
 		end
 
 
-		contentsPanel:RemoveChild(presetList)
+		parentPanel:RemoveChild(presetList)
 		presetList = ComboBox:New {
 			x = 10,
 			y = 0,
-			width = 300,
+			width = 425,
 			height = 30,
 			valign = "center",
 			align = "left",
@@ -408,7 +404,6 @@ local function PopulatePresetPanel()
 			OnSelectName = {
 				function(obj, selectedName)
 					if (selectedName == "<new>") then
-						-- handle creation of the popup
 						OpenPresetPopup()
 						presetList.selected = appliedPresetName
 						selectedPresetName = appliedPresetName
@@ -419,15 +414,15 @@ local function PopulatePresetPanel()
 			},
 			itemKeyToName = presetNames,
 		}
-		contentsPanel:AddChild(presetList)
+		parentPanel:AddChild(presetList)
 	end
 
 	local buttonLoad = Button:New {
-		x = 155,
+		x = 10,
 		width = 135,
 		y = 40,
 		height = 70,
-		caption = "Load Preset",
+		caption = "Load",
 		objectOverrideFont = WG.Chobby.Configuration:GetFont(3),
 		classname = "action_button",
 		OnClick = {
@@ -439,11 +434,11 @@ local function PopulatePresetPanel()
 	}
 
 	local buttonSave = Button:New {
-		x = 300,
+		x = 155,
 		width = 135,
 		y = 40,
 		height = 70,
-		caption = "Overwrite Preset",
+		caption = "Overwrite",
 		objectOverrideFont = WG.Chobby.Configuration:GetFont(3),
 		classname = "action_button",
 		OnClick = {
@@ -455,28 +450,33 @@ local function PopulatePresetPanel()
 		},
 	}
 
+	local function disableSelectedPreset()
+		deletePreset(selectedPresetName)
+	end
+
 
 	local buttonDelete = Button:New {
-		x = 10,
+		x = 300,
 		width = 135,
 		y = 40,
 		height = 70,
-		caption = "Delete Preset",
+		caption = "Delete ",
 		objectOverrideFont = WG.Chobby.Configuration:GetFont(3),
 		classname = "negative_button",
 		OnClick = {
 			function()
-				deletePreset(selectedPresetName)
+				WG.Chobby.ConfirmationPopup(disableSelectedPreset, "This will delete the preset. Are you sure?", nil, 315,
+					170, i18n("yes"), i18n("cancel"))
 			end
 		},
 	}
 
 	refreshPresetMenu()
 
-	contentsPanel:AddChild(buttonLoad)
-	contentsPanel:AddChild(buttonDelete)
-	contentsPanel:AddChild(buttonSave)
-	return { contentsPanel }
+	parentPanel:AddChild(buttonLoad)
+	parentPanel:AddChild(buttonDelete)
+	parentPanel:AddChild(buttonSave)
+	return { parentPanel }
 end
 
 local function CreateOptionpresetWindow()
@@ -485,16 +485,98 @@ local function CreateOptionpresetWindow()
 	local optionpresetWindow = Window:New {
 		caption = "",
 		align = "center",
-		name = "optionpresetSelectionWindow",
+		name = "OptionpresetsWindow",
 		parent = WG.Chobby.lobbyInterfaceHolder,
-		width = math.min(650, ww - 50),
-		height = math.min(300, wh - 50),
+		width = math.min(505, ww - 50),
+		height = math.min(380, wh - 50),
 		resizable = false,
 		draggable = false,
 		classname = "main_window",
 	}
+	-- first panel
+	local contentsPanel = ScrollPanel:New {
+		x = 4,
+		right = 0,
+		y = 10,
+		bottom = 0,
+		horizontalScrollbar = false,
+	}
 
-	currentModoptions = Spring.Utilities.CopyTable(battleLobby:GetMyBattleModoptions() or {})
+	-- add the tabs
+	local tabs = {}
+	tabs[1] = {
+		name = "tsneraio",
+		caption = "presets",
+		tooltip = nil,
+		objectOverrideFont = WG.Chobby.Configuration:GetFont(3),
+		children = { contentsPanel },
+		weight = 1,
+	}
+
+
+	-- potential panel 2
+	local optionpanel = ScrollPanel:New {
+		x = 4,
+		y = 10,
+		right = 0,
+		bottom = 0,
+		-- height = 100,
+		-- width = 400,
+		-- parent = contentsPanel,
+		horizontalScrollbar = false,
+	}
+	tabs[2] = {
+		name = "options",
+		caption = "load options",
+		tooltip = nil,
+		objectOverrideFont = WG.Chobby.Configuration:GetFont(3),
+		children = { optionpanel },
+		weight = 2,
+	}
+
+	Spring.Echo("-----tabvals-----")
+	Spring.Echo(tabs[#tabs].name)
+	Spring.Echo(tabs[#tabs].caption)
+	Spring.Echo(tabs[#tabs].tooltip)
+	Spring.Echo(tabs[#tabs].objectOverrideFont)
+	Spring.Echo(tabs[#tabs].children)
+	Spring.Echo(tabs[#tabs].weight)
+
+	-- initiate the tab layout
+	local tabPanel = Chili.DetachableTabPanel:New {
+		x = 4,
+		right = 4,
+		y = 49,
+		bottom = 75,
+		padding = { 0, 0, 0, 0 },
+		minTabWidth = 220,
+		tabs = tabs,
+		parent = optionpresetWindow,
+		OnTabChange = {
+		}
+	}
+
+	local tabBarHolder = Control:New {
+		name = "tabBarHolder",
+		x = 0,
+		y = 0,
+		right = 0,
+		height = 60,
+		resizable = false,
+		draggable = false,
+		padding = { 18, 6, 18, 0 },
+		parent = optionpresetWindow,
+		children = {
+			Line:New {
+				classname = "line_solid",
+				x = 0,
+				y = 52,
+				right = 0,
+				bottom = 0,
+			},
+			tabPanel.tabBar
+		}
+	}
 
 	local buttonCancel = Button:New {
 		right = 6,
@@ -537,7 +619,7 @@ local function CreateOptionpresetWindow()
 
 	local popupHolder = WG.Chobby.PriorityPopup(optionpresetWindow, CancelFunc, nil)
 	window = optionpresetWindow
-	PopulatePresetPanel()
+	PopulatePresetPanel(contentsPanel)
 
 	-- adding the enabled/ disabled options
 	-- preparing the array
@@ -550,18 +632,12 @@ local function CreateOptionpresetWindow()
 	enabledOptions["MPBattleSettings"] = multiplayer
 
 	-- to add a bit of offset
+	--
 
-	local contentsPanel = ScrollPanel:New {
-		x = 5,
-		y = 130,
-		height = 100,
-		width = 400,
-		parent = window,
-		horizontalScrollbar = false,
-	}
+
 	local counter = 0
 	for key, value in pairs(enabledOptions) do
-		contentsPanel:AddChild(ProcessBoolOption(key, value, counter))
+		optionpanel:AddChild(ProcessBoolOption(key, value, counter))
 		counter = counter + 1
 	end
 end
