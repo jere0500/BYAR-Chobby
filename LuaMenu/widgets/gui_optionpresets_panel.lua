@@ -24,20 +24,20 @@ local multiplayer = false
 local enabledOptions = {}
 local optionCaptions = {
 	["Modoptions"] = "settings part of the adv. options menu",
-	["Map"]="current selected map",
-	["Bots"]="all bots (settings, team)",
-	["Starting Areas"]="all start areas with position",
-	["Starting Position Types"]="(singleplayer, debug mode) type of start positions",
-	["Multiplayer Battle Settings"]="multiplayer specific settings (battle preset, #teams, ...)"
+	["Map"] = "current selected map",
+	["Bots"] = "all bots (settings, team)",
+	["Starting Areas"] = "all start areas with position",
+	["Starting Position Types"] = "(singleplayer, debug mode) type of start positions",
+	["Multiplayer Battle Settings"] = "multiplayer specific settings (battle preset, #teams, ...)"
 }
 
 -- edited by the preset
-local currentModoptions = {}
+local currentModoptions
 local currentMap
-local currentAITable = {}
+local currentAITable
 local currentStartRects
 local currentStartPosType
-local currentMPBattleSettings = {}
+local currentMPBattleSettings
 
 -- now we need to store the object in this class
 local jsondata;
@@ -52,6 +52,14 @@ local appliedPresetName = "defaultPreset";
 local refreshPresetMenu = function()
 end
 
+-- errorStr
+local errorStr = ""
+
+-- write to the error Panel
+local writeError = function(errorM)
+	errorStr = errorM
+end
+
 
 --------------------------------------------------------------------------------
 --- Helper functions
@@ -61,13 +69,20 @@ local function refreshJSONData()
 	if modfile ~= nil then
 		local boolOut
 		boolOut, jsondata = pcall(json.decode, modfile:read())
+		Spring.Echo("weird error--0-1203")
+		Spring.Echo(boolOut)
+		Spring.Echo(jsondata)
 
 		-- handles broken json file
-		if not boolOut then
+		if not boolOut or jsondata == nil or type(jsondata) ~= "table" then
 			--error during file reading, should output read text TODO
-			modfile:close()
 			local localtime = os.date('%Y-%m-%d-%H:%M:%S')
-			local renamesuccess = os.rename("optionsPresets.json", "optionsPresetsError:" .. localtime .. ".json")
+			local oldfile = "optionsPresets.json"
+			local errorfile = "optionsPresetsError:" .. localtime .. ".json"
+			writeError("Error reading preset file\n " .. oldfile .. " was moved to \n" .. errorfile)
+
+			modfile:close()
+			local renamesuccess = os.rename(oldfile, errorfile)
 			if not renamesuccess then
 				Spring.Echo("fail during rename")
 				return
@@ -109,7 +124,7 @@ local function applyPreset(presetName)
 	if presetObj ~= nil then
 		-- only apply in multiplayer
 		local presetMPBattleSettings = presetObj["Multiplayer Battle Settings"]
-		if presetMPBattleSettings ~= nil and multiplayer then
+		if presetMPBattleSettings ~= nil and multiplayer and enabledOptions["Multiplayer Battle Settings"] then
 			battleLobby:SayBattle("!preset " .. presetMPBattleSettings["preset"])
 			if presetMPBattleSettings["locked"] then
 				battleLobby:SayBattle("!lock")
@@ -125,6 +140,11 @@ local function applyPreset(presetName)
 		-- modoptions
 		currentModoptions = presetObj["Modoptions"]
 		if (currentModoptions ~= nil and enabledOptions["Modoptions"]) then
+			-- if multiplayer have to disable other modoptions first:
+			if (multiplayer) then
+				WG.ModoptionsPanel.ClearModoptions()
+			end
+
 			battleLobby:SetModOptions(currentModoptions)
 		end
 
@@ -300,6 +320,11 @@ local function PopulatePresetPanel(parentPanel)
 	-- reading the default Preset options from the json data
 	refreshJSONData()
 
+	local function disableSelectedPreset()
+		deletePreset(selectedPresetName)
+	end
+
+
 	-- popup for entering a new preset Name
 	local function OpenPresetPopup()
 		local openPresetPopup = Window:New {
@@ -374,7 +399,6 @@ local function PopulatePresetPanel(parentPanel)
 				end
 			},
 		}
-
 	end
 
 	local presetNames = {}
@@ -429,24 +453,9 @@ local function PopulatePresetPanel(parentPanel)
 		parentPanel:AddChild(presetList)
 	end
 
-	local buttonLoad = Button:New {
-		x = 10,
-		width = 135,
-		y = 40,
-		height = 70,
-		caption = "Load",
-		objectOverrideFont = WG.Chobby.Configuration:GetFont(3),
-		classname = "action_button",
-		OnClick = {
-			function()
-				applyPreset(selectedPresetName)
-				window:Dispose()
-			end
-		},
-	}
 
 	local buttonSave = Button:New {
-		x = 155,
+		x = 10,
 		width = 135,
 		y = 40,
 		height = 70,
@@ -466,10 +475,22 @@ local function PopulatePresetPanel(parentPanel)
 		},
 	}
 
-	local function disableSelectedPreset()
-		deletePreset(selectedPresetName)
-	end
 
+	local buttonLoad = Button:New {
+		x = 155,
+		width = 135,
+		y = 40,
+		height = 70,
+		caption = "Load",
+		objectOverrideFont = WG.Chobby.Configuration:GetFont(3),
+		classname = "action_button",
+		OnClick = {
+			function()
+				applyPreset(selectedPresetName)
+				window:Dispose()
+			end
+		},
+	}
 
 	local buttonDelete = Button:New {
 		x = 300,
@@ -486,17 +507,36 @@ local function PopulatePresetPanel(parentPanel)
 					return
 				end
 
-				WG.Chobby.ConfirmationPopup(disableSelectedPreset, "This will delete preset: \""..selectedPresetName.."\". Are you sure?", nil, 315,
+				WG.Chobby.ConfirmationPopup(disableSelectedPreset,
+					"This will delete preset: \"" .. selectedPresetName .. "\". Are you sure?", nil, 315,
 					170, i18n("yes"), i18n("cancel"))
 			end
 		},
 	}
+
+	local errorLabel = Label:New {
+		x = 10,
+		width = 200,
+		y = 130,
+		align = "left",
+		height = 35,
+		caption = errorStr, --start with the errorstring defined before
+		objectOverrideFont = WG.Chobby.Configuration:GetFont(2),
+	}
+	-- reset errorStr to only show it once
+	errorStr = ""
+
+	-- overload the writeError function
+	writeError = function(errorM)
+		errorLabel.caption = errorM
+	end
 
 	refreshPresetMenu()
 
 	parentPanel:AddChild(buttonLoad)
 	parentPanel:AddChild(buttonDelete)
 	parentPanel:AddChild(buttonSave)
+	parentPanel:AddChild(errorLabel)
 	return { parentPanel }
 end
 
@@ -637,12 +677,15 @@ local function CreateOptionpresetWindow()
 	-- adding the enabled/ disabled options
 	-- preparing the array
 	-- first all should be enabled, keys are the same as in the localjson
-	enabledOptions["Bots"] = true
-	enabledOptions["Map"] = true
-	enabledOptions["Modoptions"] = true
-	enabledOptions["Starting Areas"] = true
-	enabledOptions["Starting Position Types"] = true
-	if multiplayer then
+	-- only redefine if undefined
+	if (enabledOptions["Bots"] == nil) then
+		enabledOptions["Bots"] = true
+		enabledOptions["Map"] = true
+		enabledOptions["Modoptions"] = true
+		enabledOptions["Starting Areas"] = true
+		enabledOptions["Starting Position Types"] = true
+	end
+	if multiplayer and enabledOptions["Multiplayer Battle Settings"] == nil then
 		enabledOptions["Multiplayer Battle Settings"] = multiplayer
 	end
 
@@ -694,6 +737,9 @@ function OptionpresetsPanel.ShowPresetPanel()
 
 	-- multiplayer specific options
 	if multiplayer then
+		if currentMPBattleSettings == nil then
+			currentMPBattleSettings = {}
+		end
 		currentMPBattleSettings["locked"] = battle.locked
 		currentMPBattleSettings["autoBalance"] = battle.autoBalance
 		currentMPBattleSettings["teamSize"] = battle.teamSize
