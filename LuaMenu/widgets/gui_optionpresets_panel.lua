@@ -41,6 +41,9 @@ local currentStartRects
 local currentStartPosType
 local currentMPBattleSettings
 
+-- used to generate a point to resume
+local multiplayerModoptions
+
 -- now we need to store the object in this class
 local jsondata;
 
@@ -144,7 +147,12 @@ local function applyPreset(presetName)
 		if (currentModoptions ~= nil and enabledOptions["Modoptions"]) then
 			-- if multiplayer have to disable other modoptions first:
 			if (multiplayer) then
-				WG.ModoptionsPanel.ClearModoptions()
+				-- now apply the modoptions as the baseline
+				local combinedModoptions = multiplayerModoptions
+				for key, value in pairs(currentModoptions) do
+					multiplayerModoptions[key] = value
+				end
+				currentModoptions = combinedModoptions
 			end
 
 			battleLobby:SetModOptions(currentModoptions)
@@ -694,14 +702,28 @@ local function CreateOptionpresetWindow()
 		enabledOptions["Multiplayer Battle Settings"] = multiplayer
 	end
 
+	-- disable multiplayer again
+
 	-- to add a bit of offset
-	--
 
 
 	local counter = 0
 	for key, value in pairs(enabledOptions) do
 		optionpanel:AddChild(ProcessBoolOption(key, value, counter))
 		counter = counter + 1
+	end
+end
+
+-- clones the multiplayer modoptions to have a reset point that can be used when applying reset value
+function OptionpresetsPanel.cloneMPModoptions()
+	Spring.Echo("called clone MP Modoptions")
+	if multiplayerModoptions == nil then
+		battleLobby = WG.LibLobby.localLobby
+		multiplayerModoptions = Spring.Utilities.CopyTable(battleLobby:GetMyBattleModoptions() or {})
+		--for debugging purposes lets print all the current Modoptions
+		for key, value in pairs(multiplayerModoptions) do
+			Spring.Echo("-key:"..key..", value: "..value)
+		end
 	end
 end
 
@@ -715,7 +737,10 @@ function OptionpresetsPanel.ShowPresetPanel()
 		battleLobby = WG.LibLobby.lobby
 		battle = battleLobby:GetBattle(battleLobby:GetMyBattleID())
 		multiplayer = true
+	else
+		multiplayer = false
 	end
+
 
 	-- copy all options from the battle/ lobby for managing:
 
@@ -742,6 +767,10 @@ function OptionpresetsPanel.ShowPresetPanel()
 
 	-- multiplayer specific options
 	if multiplayer then
+		-- if
+		WG.OptionpresetsPanel.cloneMPModoptions()
+
+
 		if currentMPBattleSettings == nil then
 			currentMPBattleSettings = {}
 		end
@@ -753,10 +782,6 @@ function OptionpresetsPanel.ShowPresetPanel()
 		currentMPBattleSettings["preset"] = battle.preset
 
 
-		--for debugging purposes lets print all the current Modoptions
-		for key, value in pairs(currentModoptions) do
-			Spring.Echo("-key:"..key..", value: "..value)
-		end
 	end
 
 	CreateOptionpresetWindow()
@@ -768,5 +793,6 @@ function widget:Initialize()
 	VFS.Include(LUA_DIRNAME .. "widgets/chobby/headers/exports.lua", nil, VFS.RAW_FIRST)
 	VFS.Include("libs/json.lua")
 
+	-- clone multiplayer options, if they are defined
 	WG.OptionpresetsPanel = OptionpresetsPanel
 end
