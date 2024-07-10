@@ -29,7 +29,6 @@ local optionCaptions = {
 	["Map"] = "current selected map",
 	["Bots"] = "all bots (settings, team)",
 	["Starting Areas"] = "all start areas with position",
-	["Starting Position Types"] = "(singleplayer, debug mode) type of start positions",
 	["Multiplayer Battle Settings"] = "multiplayer specific settings (battle preset, #teams, ...)"
 }
 
@@ -38,7 +37,6 @@ local currentModoptions
 local currentMap
 local currentAITable
 local currentStartRects
-local currentStartPosType
 local currentMPBattleSettings
 
 -- used to generate a point to resume
@@ -196,11 +194,6 @@ local function applyPreset(presetName)
 				WG.BattleRoomWindow.AddStartRect(index - 1, l, t, r, b)
 			end
 		end
-
-		local startPosType = presetObj["Starting Position Types"]
-		if startPosType ~= nil and enabledOptions["Starting Position Types"] then
-			WG.BattleRoomWindow.SetBattleStartPosType(startPosType)
-		end
 	end
 end
 
@@ -252,13 +245,6 @@ local function writePreset(presetName)
 			jsondata[preset]["Starting Areas"] = {}
 		end
 		jsondata[preset]["Starting Areas"] = currentStartRects
-	end
-
-	if currentStartPosType ~= nil then
-		if jsondata[preset]["Starting Position Types"] == nil and enabledOptions["startPosType"] then
-			jsondata[preset]["Starting Position Types"] = {}
-		end
-		jsondata[preset]["Starting Position Types"] = currentStartPosType
 	end
 
 	if currentMPBattleSettings ~= nil then
@@ -696,7 +682,6 @@ local function CreateOptionpresetWindow()
 		enabledOptions["Map"] = true
 		enabledOptions["Modoptions"] = true
 		enabledOptions["Starting Areas"] = true
-		enabledOptions["Starting Position Types"] = true
 	end
 	if multiplayer and enabledOptions["Multiplayer Battle Settings"] == nil then
 		enabledOptions["Multiplayer Battle Settings"] = multiplayer
@@ -748,7 +733,6 @@ function OptionpresetsPanel.ShowPresetPanel()
 
 	if battle then
 		currentMap = battle.mapName
-		currentStartPosType = battle.startPosType
 	else
 		Spring.Echo("No battle found")
 	end
