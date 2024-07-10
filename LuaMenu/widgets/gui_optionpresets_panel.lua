@@ -12,6 +12,8 @@ end
 
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
+-- const:
+local placeHolder  = "<noPresetSelected>"
 
 -- Variables
 local battleLobby
@@ -43,10 +45,10 @@ local currentMPBattleSettings
 local jsondata;
 
 -- preset that is selected in the dropdown menu
-local selectedPresetName = "defaultPreset";
+local selectedPresetName = placeHolder;
 
 -- preset that is currently applied
-local appliedPresetName = "defaultPreset";
+local appliedPresetName = placeHolder;
 
 -- defining function to later overwrite
 local refreshPresetMenu = function()
@@ -95,7 +97,7 @@ local function refreshJSONData()
 	if modfile == nil then
 		-- creates file when it does not exist
 		jsondata = {}
-		jsondata["defaultPreset"] = {}
+		-- jsondata["defaultPreset"] = {}
 		modfile = io.open("optionsPresets.json", 'w')
 		local jsonobj = json.encode(jsondata)
 		modfile:write(jsonobj)
@@ -196,7 +198,7 @@ end
 
 -- deletes a preset by name
 local function deletePreset(presetName)
-	if presetName ~= "defaultPreset" then
+	if presetName ~= placeHolder or presetName ~= "<new>" then
 		jsondata[presetName] = nil
 		saveJSONData()
 		refreshPresetMenu()
@@ -347,7 +349,7 @@ local function PopulatePresetPanel(parentPanel)
 			height                 = 30,
 			text                   = "",
 			useIME                 = false,
-			hint                   = "enter the name for your preset",
+			hint                   = "enter a name for your preset",
 			parent                 = openPresetPopup,
 			objectOverrideFont     = WG.Chobby.Configuration:GetFont(2),
 			objectOverrideHintFont = WG.Chobby.Configuration:GetFont(11),
@@ -388,7 +390,7 @@ local function PopulatePresetPanel(parentPanel)
 			width = 135,
 			y = 50,
 			height = 70,
-			caption = "Cancel",
+			caption = i18n("cancel"),
 			parent = openPresetPopup,
 			objectOverrideFont = WG.Chobby.Configuration:GetFont(3),
 			classname = "negative_button",
@@ -407,7 +409,7 @@ local function PopulatePresetPanel(parentPanel)
 	refreshPresetMenu = function()
 		presetNames = {}
 		if jsondata[selectedPresetName] == nil then
-			selectedPresetName = "defaultPreset"
+			selectedPresetName = placeHolder
 		end
 
 		table.sort(jsondata)
@@ -465,7 +467,7 @@ local function PopulatePresetPanel(parentPanel)
 		OnClick = {
 			function()
 				--verify deletable preset
-				if selectedPresetName == "" or selectedPresetName == "defaultPreset" or selectedPresetName == "defaultPreset" then
+				if selectedPresetName == "" or selectedPresetName == placeHolder or selectedPresetName == "<new>" then
 					return
 				end
 				writePreset(selectedPresetName)
@@ -481,11 +483,14 @@ local function PopulatePresetPanel(parentPanel)
 		width = 135,
 		y = 40,
 		height = 70,
-		caption = "Load",
+		caption = i18n("load"),
 		objectOverrideFont = WG.Chobby.Configuration:GetFont(3),
 		classname = "action_button",
 		OnClick = {
 			function()
+				if(selectedPresetName == nil or selectedPresetName == placeHolder or selectedPresetName == "<new>")then
+					return
+				end
 				applyPreset(selectedPresetName)
 				window:Dispose()
 			end
@@ -497,13 +502,13 @@ local function PopulatePresetPanel(parentPanel)
 		width = 135,
 		y = 40,
 		height = 70,
-		caption = "Delete ",
+		caption = i18n("delete_replay"), --seem to contain the appropriate term
 		objectOverrideFont = WG.Chobby.Configuration:GetFont(3),
 		classname = "negative_button",
 		OnClick = {
 			function()
 				--verify deletable preset
-				if selectedPresetName == "" or selectedPresetName == "defaultPreset" or selectedPresetName == "defaultPreset" then
+				if selectedPresetName == "" or selectedPresetName == "<new>" or selectedPresetName == placeHolder then
 					return
 				end
 
@@ -746,6 +751,12 @@ function OptionpresetsPanel.ShowPresetPanel()
 		currentMPBattleSettings["nbTeams"] = battle.nbTeams
 		currentMPBattleSettings["balanceMode"] = battle.balanceMode
 		currentMPBattleSettings["preset"] = battle.preset
+
+
+		--for debugging purposes lets print all the current Modoptions
+		for key, value in pairs(currentModoptions) do
+			Spring.Echo("-key:"..key..", value: "..value)
+		end
 	end
 
 	CreateOptionpresetWindow()
