@@ -687,9 +687,10 @@ local function CreateOptionpresetWindow()
 		enabledOptions["Multiplayer Battle Settings"] = multiplayer
 	end
 
-	-- disable multiplayer again
-
-	-- to add a bit of offset
+	-- disable multiplayer options again when back to singleplayer
+	if not multiplayer then
+		enabledOptions["Multiplayer Battle Settings"] = nil
+	end
 
 
 	local counter = 0
