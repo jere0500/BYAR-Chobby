@@ -156,6 +156,31 @@ local function applyPreset(presetName)
 			battleLobby:SetModOptions(currentModoptions)
 		end
 
+		-- map
+		local presetMapName = presetObj["Map"]
+		if (presetMapName ~= nil and enabledOptions["Map"]) then
+			battleLobby:SelectMap(presetMapName)
+		end
+
+		-- starting Areas
+		local presetRectangles = presetObj["Starting Areas"]
+		-- calculated the required team size, when it is undefined for the preset
+		if multiplayer and presetMPBattleSettings == nil then
+			battleLobby:SayBattle("!nbTeams " .. #presetRectangles)
+		end
+
+		if (presetRectangles ~= nil and enabledOptions["Starting Areas"]) then
+			WG.BattleRoomWindow.RemoveStartRect()
+			for index, value in ipairs(presetRectangles) do
+				local l = value["left"]
+				local r = value["right"]
+				local t = value["top"]
+				local b = value["bottom"]
+
+				WG.BattleRoomWindow.AddStartRect(index - 1, l, t, r, b)
+			end
+		end
+
 		-- AIs with their settings
 		local presetAi = presetObj["Bots"]
 		if presetAi ~= nil and enabledOptions["Bots"] then
@@ -172,26 +197,6 @@ local function applyPreset(presetName)
 				battlestatusoptions.side = value.side
 				battleLobby:AddAi(key, value.aiLib, value.allyNumber, value.aiVersion, value.aiOptions,
 					battlestatusoptions)
-			end
-		end
-
-		-- map
-		local presetMapName = presetObj["Map"]
-		if (presetMapName ~= nil and enabledOptions["Map"]) then
-			battleLobby:SelectMap(presetMapName)
-		end
-
-		-- starting Areas
-		local presetRectangles = presetObj["Starting Areas"]
-		if (presetRectangles ~= nil and enabledOptions["Starting Areas"]) then
-			WG.BattleRoomWindow.RemoveStartRect()
-			for index, value in ipairs(presetRectangles) do
-				local l = value["left"]
-				local r = value["right"]
-				local t = value["top"]
-				local b = value["bottom"]
-
-				WG.BattleRoomWindow.AddStartRect(index - 1, l, t, r, b)
 			end
 		end
 	end
