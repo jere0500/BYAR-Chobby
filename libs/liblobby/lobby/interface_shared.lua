@@ -51,13 +51,13 @@ function Interface:Connect(host, port, user, password, cpu, localIP, lobbyVersio
 	return true
 end
 
-function Interface:Disconnect()
+function Interface:Disconnect(reason)
 	self.status = "offline"
 	self.finishedConnecting = false
 	if self.client then
 		self.client:close()
 	end
-	self:_OnDisconnected(nil, true)
+	self:_OnDisconnected(reason, true)
 end
 
 function Interface:TextEraseNewline(str)
@@ -117,6 +117,11 @@ function Interface:_SendCommand(command, sendMessageCount)
 	if numBytes == nil then
 		Spring.Echo("Error in Interface:_SendCommand while sending", numBytes, errorCode, numActuallySent, commandLength, totalSent)
 		--Spring.Echo(command)
+	end
+
+	if errorCode and errorCode == "closed" then
+		self:Disconnect(errorCode)
+		return
 	end
 
 	self:_CallListeners("OnCommandSent", command:sub(1, #command-1))
@@ -288,6 +293,8 @@ function Interface:_SocketUpdate()
 --	end
 	local brec, bsent, age = self.client:getstats()
 	if err ~= nil then
+		-- If any error happened, then clear the buffer for sure
+		self.buffer = "" 
 		-- some error happened in select
 		if err == "timeout" then
 			-- we've received no data after connecting for a while. assume connection cannot be established
@@ -295,6 +302,7 @@ function Interface:_SocketUpdate()
 				self.client:shutdown()
 				self.client = nil
 				self:_OnDisconnected("No response from host.")
+				Spring.Echo("No response from host.")
 			end
 			-- nothing to do, return
 			return
@@ -321,6 +329,8 @@ function Interface:_SocketUpdate()
 			if self.status ~= "offline" then
 				self.status = "disconnected"
 			end
+			-- If any error happened, then clear the buffer for sure
+			self.buffer = "" 
 			self:_OnDisconnected()
 		end
 	end

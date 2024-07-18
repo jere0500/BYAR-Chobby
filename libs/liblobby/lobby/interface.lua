@@ -57,6 +57,8 @@ function Interface:Login(user, password, cpu, localIP, lobbyVersion)
 	if localIP == nil then
 		localIP = "*"
 	end
+
+	if self.buffer then self.buffer = "" end 
 	password = VFS.CalculateHash(password, 0)
 	sentence = "LuaLobby " .. lobbyVersion .. "\t" .. self.agent .. "\t" .. "b sp"
 	cmd = concat("LOGIN", user, password, "0", localIP, sentence)
@@ -175,8 +177,44 @@ end
 -- byar-chobby will ask for missing userID or userName depending on which info is known
 ------------------------------------------------------------------------------------------------
 
+local whoisQueueActive = false
+local whoisQueue = {}
+
 function Interface:Whois(userID)
-	self:_SendCommand(concat("c.user.whois", userID))
+	local function SendWhois()
+		local commandTxt = ""
+		local currentQueueLength = #whoisQueue
+		for i=1, currentQueueLength do
+			if commandTxt ~= "" then
+				commandTxt = commandTxt .. "\n"
+			end
+			commandTxt = commandTxt .. concat("c.user.whois", whoisQueue[i])
+		end
+		for i=1, currentQueueLength do
+			table.remove(whoisQueue, 1)
+		end
+		self:_SendCommand(commandTxt)
+		return self
+	end
+
+	local function ProcessWhoisQueue()
+		if #whoisQueue == 0 then
+			whoisQueueActive = false
+			return self
+		end
+
+		SendWhois()
+		WG.Delay(ProcessWhoisQueue, 0.4)
+		return self
+	end
+
+	table.insert(whoisQueue, userID)
+	if whoisQueueActive then
+		return self
+	end
+	
+	whoisQueueActive = true
+	WG.Delay(ProcessWhoisQueue, 0.4)
 	return self
 end
 
@@ -583,6 +621,12 @@ end
 Interface.commands["DENIED"] = Interface._OnDenied
 Interface.commandPattern["DENIED"] = "(.+)"
 
+function Interface:_OnS_System_Disconnect(reason)
+	self:_OnDisconnected(reason, false)
+end
+Interface.commands["s.system.disconnect"] = Interface._OnDenied
+Interface.commandPattern["s.system.disconnect"] = "(.+)"
+
 function Interface:_OnAgreement(line)
 	self:super("_OnAgreement", line)
 end
@@ -677,6 +721,10 @@ Interface.commands["QUEUED"] = Interface._OnQueued
 function Interface:_OnWhois(id, data)
 	id = tonumber(id)
 	local userData = Spring.Utilities.json.decode(Spring.Utilities.Base64Decode(data))
+	if userData and userData.error then
+		Spring.Log(LOG_SECTION, LOG.ERROR, "_OnWhois error: " .. tostring(userData.error))
+		return self
+	end
 	self:super("_OnWhois", id, userData)
 end
 Interface.commands["s.user.whois"] = Interface._OnWhois

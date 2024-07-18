@@ -823,6 +823,26 @@ local function InitializeModoptionsDisplay()
 		return value
 	end
 
+local function tweakSummary(value)
+	value = tostring(value)
+	local hash = Spring.Utilities.Base64Encode(VFS.CalculateHash(value,1))
+	local tweakText = string.format("%d:%s", value:len(), hash:sub(1, 4))
+	if value:find("[^%w%+/=]") then -- Non-base64 character found
+		return tweakText
+	end
+	for line in Spring.Utilities.Base64Decode(value):gmatch("([^\r\n]*)[\r\n]?") do
+		if line:sub(1, 2) ~= "--" then -- Line doesn't start with a comment
+			return tweakText
+		end
+		local comment = line:sub(3, 27)
+		if not comment:find("[^%w%p ]") then -- Only whitelisted characters found
+			return tweakText .. "\n[" .. comment .. "]"
+		end
+	end
+
+	return tweakText
+end
+
 	local panelModoptions
 
 	local function OnSetModOptions(listener, modopts)
@@ -842,7 +862,13 @@ local function InitializeModoptionsDisplay()
 				if text ~= "\255\255\255\255" then
 					text = text .. "\255\120\120\120" .. "------" .. "\n"
 				end
-				text = text .. tostring(name) .. " = \255\255\255\255" .. shortenedValue(value) .. "\n"
+				text = text .. tostring(name).. " = \255\255\255\255"
+				if (key:sub(1,10) == "tweakunits" or key:sub(1,9) == "tweakdefs") then
+					text = text .. tweakSummary(value)
+				else
+					text = text .. shortenedValue(value)
+				end
+				text = text .. "\n"
 				empty = false
 			end
 		end

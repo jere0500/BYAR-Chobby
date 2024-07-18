@@ -68,6 +68,15 @@ if isIntel or isLinux then
 	hibernateFps = 2
 end
 
+if isAmd then 
+	maxVsync = 4 -- This is an attempted fix at AMD Driver 24.6.1, as it always seems to crash at interval = 5
+	local initVsync = Spring.GetConfigInt("VSync", 1)
+	if initVsync > maxVsync then
+		Spring.SetConfigInt("VSync", maxVsync)
+	end
+end
+
+Spring.Echo("Limit Idle FPS is enabled:", widget:GetInfo().enabled, "max set to ", maxVsync, 'for platform', Platform.gpuVendor, isAmd)
 -- detect display frequency > 60 and set vsyncValueIdle to 6
 local infolog = VFS.LoadFile("infolog.txt")
 local monitorFrequency = 60
@@ -112,6 +121,9 @@ local function init()
 	end
 	vsyncValueSleep = vsyncValueLobby + 2
 	if vsyncValueSleep > maxVsync then vsyncValueSleep = maxVsync end
+	if vsyncValueLobby > maxVsync then vsyncValueLobby = maxVsync end
+	if vsyncValueHibernate > maxVsync then vsyncValueHibernate = maxVsync end
+	if vsyncValueOffscreen > maxVsync then vsyncValueOffscreen = maxVsync end
 
 	activeFullspeedFps = math.ceil(monitorFrequency/vsyncValueLobby)
 	if activeFullspeedFps < 60 then
@@ -129,7 +141,7 @@ local function logUserInput()
 end
 
 function widget:Initialize()
-	Spring.SetConfigInt("VSync", vsyncValueLobby)
+	Spring.SetConfigInt("VSync", math.min(maxVsync, vsyncValueLobby))
 
 	if WG.Chobby and WG.Chobby.Configuration then
 		drawAtFullspeed = WG.Chobby.Configuration.drawAtFullSpeed
