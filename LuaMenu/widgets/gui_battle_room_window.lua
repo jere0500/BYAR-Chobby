@@ -4022,7 +4022,7 @@ function BattleRoomWindow.ShowMultiplayerBattleRoom(battleID)
 		sync = (haveMapAndGame and 1) or 2, -- 0 = unknown, 1 = synced, 2 = unsynced
 	})
 
-	WG.OptionpresetsPanel.cloneMPModoptions()
+	WG.OptionpresetsPanel.cloneMPModoptions(true)
 end
 
 function BattleRoomWindow.GetSingleplayerControl(setupData)

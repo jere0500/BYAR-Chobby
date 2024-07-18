@@ -144,16 +144,16 @@ local function applyPreset(presetName)
 		currentModoptions = presetObj["Modoptions"]
 		if (currentModoptions ~= nil and enabledOptions["Modoptions"]) then
 			-- if multiplayer have to disable other modoptions first:
-			if (multiplayer) then
+			if multiplayer then
 				-- now apply the modoptions as the baseline
 				local combinedModoptions = multiplayerModoptions
 				for key, value in pairs(currentModoptions) do
-					multiplayerModoptions[key] = value
+					combinedModoptions[key] = value
 				end
-				currentModoptions = combinedModoptions
+				battleLobby:SetModOptions(combinedModoptions)
+			else
+				battleLobby:SetModOptions(currentModoptions)
 			end
-
-			battleLobby:SetModOptions(currentModoptions)
 		end
 
 		-- map
@@ -706,9 +706,10 @@ local function CreateOptionpresetWindow()
 end
 
 -- clones the multiplayer modoptions to have a reset point that can be used when applying reset value
-function OptionpresetsPanel.cloneMPModoptions()
+function OptionpresetsPanel.cloneMPModoptions(force)
 	Spring.Echo("called clone MP Modoptions")
-	if multiplayerModoptions == nil then
+	if multiplayerModoptions == nil or force then
+		Spring.Echo("overwriting: clone MP Modoptions")
 		battleLobby = WG.LibLobby.localLobby
 		multiplayerModoptions = Spring.Utilities.CopyTable(battleLobby:GetMyBattleModoptions() or {})
 		--for debugging purposes lets print all the current Modoptions
@@ -758,7 +759,7 @@ function OptionpresetsPanel.ShowPresetPanel()
 	-- multiplayer specific options
 	if multiplayer then
 		-- if
-		WG.OptionpresetsPanel.cloneMPModoptions()
+		WG.OptionpresetsPanel.cloneMPModoptions(false)
 
 
 		if currentMPBattleSettings == nil then
