@@ -1034,6 +1034,11 @@ function ModoptionsPanel.ReturnModoptions()
 	return modoptions
 end
 
+-- assume the the defaults have been defined already
+function ModoptionsPanel.GetDefaultModoptions()
+	return modoptionDefaults
+end
+
 function ModoptionsPanel.ShowModoptions()
 	if modoptions then
 		CreateModoptionWindow()

@@ -32,12 +32,17 @@ local optionCaptions = {
 	["Multiplayer Battle Settings"] = "multiplayer specific settings (battle preset, #teams, ...)"
 }
 
+
 -- edited by the preset
 local currentModoptions
 local currentMap
 local currentAITable
 local currentStartRects
 local currentMPBattleSettings
+
+
+-- for multiplayer
+local previousModoptions
 
 -- used to generate a point to resume
 local multiplayerModoptions
@@ -141,14 +146,22 @@ local function applyPreset(presetName)
 		end
 
 		-- modoptions
+		previousModoptions = currentModoptions
 		currentModoptions = presetObj["Modoptions"]
 		if (currentModoptions ~= nil and enabledOptions["Modoptions"]) then
 			-- if multiplayer have to disable other modoptions first:
 			if multiplayer then
 				-- now apply the modoptions as the baseline
-				local combinedModoptions = multiplayerModoptions
+				local combinedModoptions = previousModoptions
+				for key, _ in pairs(previousModoptions) do
+					combinedModoptions[key] = multiplayerModoptions[key]
+				end
 				for key, value in pairs(currentModoptions) do
 					combinedModoptions[key] = value
+				end
+				Spring.Echo("adding the modoptions")
+				for key, value in pairs(combinedModoptions) do
+					Spring.Echo("applying: key"..key..", value:"..value)
 				end
 				battleLobby:SetModOptions(combinedModoptions)
 			else
@@ -705,20 +718,6 @@ local function CreateOptionpresetWindow()
 	end
 end
 
--- clones the multiplayer modoptions to have a reset point that can be used when applying reset value
-function OptionpresetsPanel.cloneMPModoptions(force)
-	Spring.Echo("called clone MP Modoptions")
-	if multiplayerModoptions == nil or force then
-		Spring.Echo("overwriting: clone MP Modoptions")
-		battleLobby = WG.LibLobby.localLobby
-		multiplayerModoptions = Spring.Utilities.CopyTable(battleLobby:GetMyBattleModoptions() or {})
-		--for debugging purposes lets print all the current Modoptions
-		for key, value in pairs(multiplayerModoptions) do
-			Spring.Echo("-key:"..key..", value: "..value)
-		end
-	end
-end
-
 -- external function to open the preset Panel
 function OptionpresetsPanel.ShowPresetPanel()
 	battleLobby = WG.LibLobby.localLobby
@@ -735,7 +734,6 @@ function OptionpresetsPanel.ShowPresetPanel()
 
 
 	-- copy all options from the battle/ lobby for managing:
-
 	currentModoptions = Spring.Utilities.CopyTable(battleLobby:GetMyBattleModoptions() or {})
 
 	if battle then
@@ -759,7 +757,7 @@ function OptionpresetsPanel.ShowPresetPanel()
 	-- multiplayer specific options
 	if multiplayer then
 		-- if
-		WG.OptionpresetsPanel.cloneMPModoptions(false)
+		multiplayerModoptions = WG.ModoptionsPanel.GetDefaultModoptions()
 
 
 		if currentMPBattleSettings == nil then
